@@ -27,9 +27,10 @@ export async function POST(request: Request) {
 
     // --- BURASI DÜZELTİLDİ ---
     // Adresin 'https://' ile başlamasını garanti et
+    // VERCEL_URL Vercel tarafından otomatik olarak sağlanır (ai-analyzer-psi.vercel.app)
     const baseUrl = process.env.VERCEL_URL
       ? `https://${process.env.VERCEL_URL}` // Vercel'deyse (Canlıda)
-      : 'http://localhost:3000';           // Lokal'deyse
+      : 'http://localhost:3000';           // Lokal'deyse (test için)
     // --- DÜZELTME BİTTİ ---
 
     // 2. "Postacıya" (QStash) mektubu ver
@@ -53,7 +54,7 @@ export async function POST(request: Request) {
     }, { status: 200 });
 
   } catch (error) {
-    console.error(error);
+    console.error(error); // Hata olursa Vercel loglarına yaz
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
