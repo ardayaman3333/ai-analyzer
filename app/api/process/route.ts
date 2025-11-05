@@ -1,4 +1,5 @@
 /* app/api/process/route.ts (TAMAMEN DÜZELTİLMİŞ HALİ) */
+// Zorunlu Güncelleme
 
 import { sql } from "@vercel/postgres";
 import { NextResponse } from "next/server";
