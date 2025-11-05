@@ -1,5 +1,5 @@
 /* app/page.tsx */
-// Vercel'i yeniden başlatmaya zorla v9
+// Vercel'i yeniden başlatmaya zorla v11
 
 "use client"; // Sayfanın interaktif (tıklanabilir) olmasını sağlar
 
