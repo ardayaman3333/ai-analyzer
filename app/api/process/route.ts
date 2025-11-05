@@ -2,7 +2,7 @@
 
 import { sql } from "@vercel/postgres";
 import { NextResponse } from "next/server";
-import { verifySignature } from "@upstash/qstash/nextjs"; // Güvenlik Görevlisi
+import { verifySignatureAppRouter } from "@upstash/qstash/nextjs"; // Güvenlik Görevlisi (DOĞRU OLAN)
 
 // Güvenlik Görevlisi Fonksiyonu: "Gelen kişi Postacı mı?"
 async function handler(request: Request) {
@@ -65,7 +65,7 @@ async function handler(request: Request) {
 
 // Bu, "atölyenin" kapısıdır. Güvenlik görevlisini (verifySignature) kapıya koyarız.
 // Sadece .env.local'daki anahtarlara sahip "Postacı" (QStash) girebilir.
-export const POST = verifySignature(handler, {
+export const POST = verifySignatureAppRouter(handler, {
   currentSigningKey: process.env.QSTASH_CURRENT_SIGNING_KEY,
   nextSigningKey: process.env.QSTASH_NEXT_SIGNING_KEY,
 });
