@@ -1,4 +1,4 @@
-/* app/api/process/route.ts (GÜVENLİK GÖREVLİSİ YOK - GEÇİCİ) */
+/* app/api/process/route.ts (GÜVENLİK GÖREVLİSsİ YOK - GEÇİCİ) */
 
 import { sql } from "@vercel/postgres";
 import { NextRequest, NextResponse } from "next/server"; 
@@ -60,3 +60,4 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Processing failed" }, { status: 500 });
   }
 }
+//anasını
