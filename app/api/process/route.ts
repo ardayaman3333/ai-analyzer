@@ -1,15 +1,12 @@
-/* app/api/process/route.ts (NÜKLEER TİP DÜZELTMESİ) */
-
-// Zorunlu güncelleme v2 (Bu satırı silebilirsin veya kalabilir, fark etmez)
+/* app/api/process/route.ts (GÜVENLİK GÖREVLİSİ YOK - GEÇİCİ) */
 
 import { sql } from "@vercel/postgres";
-// NextResponse'in yanına NextRequest'i ekledik
 import { NextRequest, NextResponse } from "next/server"; 
-import { verifySignatureAppRouter } from "@upstash/qstash/nextjs";
 
-// Güvenlik Görevlisi Fonksiyonu: "Gelen kişi Postacı mı?"
-// Hatanın çözümü burada: "Request" yerine "NextRequest" kullandık
-async function handler(request: NextRequest) {
+// "handler" fonksiyonunu doğrudan "POST" olarak ihraç ediyoruz
+export async function POST(request: NextRequest) {
+
+  // Güvenlik kontrolü YOK (çünkü 'verifySignature'ı sildik)
 
   // 1. Gelen mektubu (body) oku
   const body = await request.json();
@@ -63,9 +60,3 @@ async function handler(request: NextRequest) {
     return NextResponse.json({ error: "Processing failed" }, { status: 500 });
   }
 }
-
-// Güvenlik görevlisini kapıya koy
-export const POST = verifySignatureAppRouter(handler, {
-  currentSigningKey: process.env.QSTASH_CURRENT_SIGNING_KEY,
-  nextSigningKey: process.env.QSTASH_NEXT_SIGNING_KEY,
-});
