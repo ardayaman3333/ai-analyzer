@@ -1,6 +1,6 @@
 /* app/api/process/route.ts (NÜKLEER TİP DÜZELTMESİ) */
 
-// Zorunlu güncelleme (Bu satırı silebilirsin veya kalabilir, fark etmez)
+// Zorunlu güncelleme v2 (Bu satırı silebilirsin veya kalabilir, fark etmez)
 
 import { sql } from "@vercel/postgres";
 // NextResponse'in yanına NextRequest'i ekledik
