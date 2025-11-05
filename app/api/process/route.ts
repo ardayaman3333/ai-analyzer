@@ -1,13 +1,16 @@
-/* app/api/process/route.ts (TAMAMEN DÜZELTİLMİŞ HALİ) */
-// Zorunlu Güncelleme
+/* app/api/process/route.ts (NÜKLEER TİP DÜZELTMESİ) */
+
+// Zorunlu güncelleme (Bu satırı silebilirsin veya kalabilir, fark etmez)
 
 import { sql } from "@vercel/postgres";
-import { NextResponse } from "next/server";
-// 1. DÜZELTME: "verifySignatureAppRouter" (T ile)
+// NextResponse'in yanına NextRequest'i ekledik
+import { NextRequest, NextResponse } from "next/server"; 
 import { verifySignatureAppRouter } from "@upstash/qstash/nextjs";
 
 // Güvenlik Görevlisi Fonksiyonu: "Gelen kişi Postacı mı?"
-async function handler(request: Request) {
+// Hatanın çözümü burada: "Request" yerine "NextRequest" kullandık
+async function handler(request: NextRequest) {
+
   // 1. Gelen mektubu (body) oku
   const body = await request.json();
   const { analysisId, query } = body;
@@ -26,15 +29,14 @@ async function handler(request: Request) {
 
     // --- BURASI GELECEKTE TÜM AĞIR İŞLERİN OLDUĞU YER ---
     console.log(`İŞLEM BAŞLADI: ${query} (ID: ${analysisId})`);
-    
-    // Simülasyon: 5 saniye boyunca ağır bir iş yapıyormuş gibi yap
-    await new Promise(resolve => setTimeout(resolve, 5000)); 
-    
+
+    await new Promise(resolve => setTimeout(resolve, 5000)); // 5sn bekle
+
     const fakeResult = {
       message: `Analiz tamamlandı: ${query}`,
       timestamp: new Date().toISOString(),
     };
-    
+
     console.log(`İŞLEM BİTTİ: ${query} (ID: ${analysisId})`);
     // --- AĞIR İŞ BİTTİ ---
 
@@ -51,18 +53,18 @@ async function handler(request: Request) {
 
   } catch (error) {
     console.error("Atölyede hata:", error);
-    
+
     await sql`
       UPDATE analyses
       SET status = 'failed', updated_at = NOW()
       WHERE id = ${analysisId};
     `;
-    
+
     return NextResponse.json({ error: "Processing failed" }, { status: 500 });
   }
 }
 
-// 2. DÜZELTME: "verifySignatureAppRouter" (T ile)
+// Güvenlik görevlisini kapıya koy
 export const POST = verifySignatureAppRouter(handler, {
   currentSigningKey: process.env.QSTASH_CURRENT_SIGNING_KEY,
   nextSigningKey: process.env.QSTASH_NEXT_SIGNING_KEY,
