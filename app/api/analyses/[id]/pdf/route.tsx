@@ -228,14 +228,10 @@ function AnalysisReportDocument({
 
 export async function GET(
   request: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  let id: string | undefined;
-
-  if (context?.params) {
-    const resolved = await context.params;
-    id = resolved?.id;
-  }
+  const resolved = await params;
+  let id: string | undefined = resolved?.id;
 
   if (!id) {
     try {

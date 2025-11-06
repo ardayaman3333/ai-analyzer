@@ -12,12 +12,12 @@ type AnalysisRow = {
 
 export async function GET(
   request: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   let id: string | undefined;
 
   try {
-    const resolved = await context.params;
+    const resolved = await params;
     id = resolved?.id;
   } catch {
     id = undefined;
