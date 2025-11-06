@@ -4,11 +4,13 @@
 "use client"; // Sayfanın interaktif (tıklanabilir) olmasını sağlar
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input"; // Input'u (yazı kutusu) aldık
 // useToast'ı (bildirim) kullanamıyoruz, o yüzden sildik
 
 export default function Home() {
+  const router = useRouter();
   const [query, setQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -48,6 +50,9 @@ export default function Home() {
       setMessage(`Talep Alındı! Analiz ID: ${result.analysisId}`);
       setMessageType("success");
       setQuery(""); // Kutuyu temizle
+      if (result?.analysisId) {
+        router.push(`/analysis/${result.analysisId}`);
+      }
 
     } catch (error) {
       // Hata olursa mesajı ayarla
