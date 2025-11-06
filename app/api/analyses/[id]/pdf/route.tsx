@@ -277,7 +277,7 @@ export async function GET(
       />
     ).toBuffer();
 
-    return new NextResponse(buffer, {
+    const response = new Response(buffer, {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
@@ -285,6 +285,8 @@ export async function GET(
         "Cache-Control": "no-store",
       },
     });
+
+    return NextResponse.fromResponse(response);
   } catch (error) {
     console.error("GET /api/analyses/[id]/pdf error", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
