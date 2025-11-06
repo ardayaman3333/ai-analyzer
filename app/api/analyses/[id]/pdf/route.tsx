@@ -278,8 +278,9 @@ export async function GET(
     ).toBuffer();
 
     const buffer = rawBuffer as unknown as Uint8Array;
+    const arrayBuffer = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
 
-    const response = new Response(buffer, {
+    const response = new Response(arrayBuffer, {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
