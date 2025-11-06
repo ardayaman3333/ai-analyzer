@@ -260,7 +260,7 @@ export async function GET(
     const row = rows[0];
     const parsedResult = typeof row.result === "string" ? JSON.parse(row.result) : row.result ?? {};
 
-    const buffer = await pdf(
+    const rawBuffer = await pdf(
       <AnalysisReportDocument
         data={{
           id: row.id,
@@ -276,6 +276,8 @@ export async function GET(
         }}
       />
     ).toBuffer();
+
+    const buffer = rawBuffer as unknown as Uint8Array;
 
     const response = new Response(buffer, {
       status: 200,
