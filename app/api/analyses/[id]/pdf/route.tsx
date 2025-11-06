@@ -1,7 +1,16 @@
 import React from "react";
-import { sql } from "@vercel/postgres";
 import { NextRequest, NextResponse } from "next/server";
-import { Document, Page, Text, View, StyleSheet, pdf } from "@react-pdf/renderer";
+import { sql } from "@vercel/postgres";
+import { Document, Page, StyleSheet, Text, View, pdf } from "@react-pdf/renderer";
+
+type AnalysisRow = {
+  id: string;
+  query: string;
+  status: string;
+  result: any | null;
+  created_at: string | null;
+  updated_at: string | null;
+};
 
 const styles = StyleSheet.create({
   page: {
@@ -33,10 +42,6 @@ const styles = StyleSheet.create({
     lineHeight: 1.4,
     marginBottom: 4,
   },
-  listItem: {
-    fontSize: 11,
-    marginBottom: 2,
-  },
   chipRow: {
     display: "flex",
     flexDirection: "row",
@@ -51,24 +56,30 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     fontSize: 10,
   },
-  divider: {
-    borderBottomWidth: 1,
-    borderBottomColor: "#e2e8f0",
-    marginVertical: 10,
-  },
 });
 
-type AnalysisRow = {
-  id: string;
-  query: string;
-  status: string;
-  result: any | null;
-  created_at: string | null;
-  updated_at: string | null;
-};
+const bullet = "•";
 
 const toArray = (value: any): string[] =>
   Array.isArray(value) ? value.map((v) => String(v)) : [];
+
+function BulletList({ items, empty = "-" }: { items?: string[]; empty?: string }) {
+  if (!items || items.length === 0) {
+    return <Text style={styles.text}>{empty}</Text>;
+  }
+  return (
+    <View>
+      {items.map((item, index) => (
+        <Text key={index} style={styles.text}>
+          {`${bullet} ${item}`}
+        </Text>
+      ))}
+    </View>
+  );
+}
+
+const formatDate = (value?: string | null) =>
+  value ? new Date(value).toLocaleString() : "-";
 
 function AnalysisReportDocument({
   data,
@@ -110,24 +121,6 @@ function AnalysisReportDocument({
     ? insights.domainHighlights
     : [];
 
-  const formatDate = (value?: string | null) =>
-    value ? new Date(value).toLocaleString() : "-";
-
-  const bulletList = (items?: string[], empty = "-") => {
-    if (!items || items.length === 0) {
-      return <Text style={styles.text}>{empty}</Text>;
-    }
-    return (
-      <View>
-        {items.map((item, index) => (
-          <Text key={index} style={styles.listItem}>
-            • {item}
-          </Text>
-        ))}
-      </View>
-    );
-  };
-
   return (
     <Document>
       <Page size="A4" style={styles.page}>
@@ -141,15 +134,9 @@ function AnalysisReportDocument({
           <Text style={styles.text}>Created: {formatDate(createdAt)}</Text>
           <Text style={styles.text}>Last Updated: {formatDate(updatedAt)}</Text>
           <Text style={styles.text}>
-            Classification: {classification?.type ?? "unknown"} (
-            {classification?.confidence
-              ? `${Math.round((classification.confidence as number) * 100)}% confidence`
-              : "confidence unavailable"}
-            )
+            Classification: {classification?.type ?? "unknown"}
           </Text>
         </View>
-
-        <View style={styles.divider} />
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Insights</Text>
@@ -157,27 +144,24 @@ function AnalysisReportDocument({
             Primary Domain: {insights?.primaryDomain ?? "-"}
           </Text>
           <Text style={styles.text}>Aliases:</Text>
-          {bulletList(aliases)}
-          <Text style={[styles.text, { marginTop: 6 }]}>Emails:</Text>
-          {bulletList(emails)}
-          <Text style={[styles.text, { marginTop: 6 }]}>Phones:</Text>
-          {bulletList(phones)}
-          <Text style={[styles.text, { marginTop: 6 }]}>Locations:</Text>
-          {bulletList(locations)}
-          <Text style={[styles.text, { marginTop: 6 }]}>Contact Pages:</Text>
-          {bulletList(contactPages)}
-          <Text style={[styles.text, { marginTop: 6 }]}>Pricing Pages:</Text>
-          {bulletList(pricingPages)}
+          <BulletList items={aliases} />
+          <Text style={styles.text}>Emails:</Text>
+          <BulletList items={emails} />
+          <Text style={styles.text}>Phones:</Text>
+          <BulletList items={phones} />
+          <Text style={styles.text}>Locations:</Text>
+          <BulletList items={locations} />
+          <Text style={styles.text}>Contact Pages:</Text>
+          <BulletList items={contactPages} />
+          <Text style={styles.text}>Pricing Pages:</Text>
+          <BulletList items={pricingPages} />
           {domainHighlights.length ? (
-            <View style={{ marginTop: 8 }}>
-              <Text style={styles.text}>Top Domains:</Text>
-              <View style={styles.chipRow}>
-                {domainHighlights.map((item: any, index: number) => (
-                  <Text key={index} style={styles.chip}>
-                    {item.domain} ({item.count})
-                  </Text>
-                ))}
-              </View>
+            <View style={styles.chipRow}>
+              {domainHighlights.map((item: any, index: number) => (
+                <Text key={index} style={styles.chip}>
+                  {item.domain} ({item.count})
+                </Text>
+              ))}
             </View>
           ) : null}
         </View>
@@ -186,9 +170,9 @@ function AnalysisReportDocument({
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Social Profiles</Text>
             {Object.entries(socials).map(([platform, urls]) => (
-              <View key={platform} style={{ marginBottom: 6 }}>
-                <Text style={[styles.text, { fontWeight: 600 }]}>{platform}</Text>
-                {bulletList(toArray(urls), "-")}
+              <View key={platform}>
+                <Text style={styles.text}>{platform}</Text>
+                <BulletList items={toArray(urls)} />
               </View>
             ))}
           </View>
@@ -198,9 +182,9 @@ function AnalysisReportDocument({
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Company Profile</Text>
             <Text style={styles.text}>Sectors:</Text>
-            {bulletList(toArray(company.sectors))}
-            <Text style={[styles.text, { marginTop: 6 }]}>Services:</Text>
-            {bulletList(toArray(company.services))}
+            <BulletList items={toArray(company.sectors)} />
+            <Text style={styles.text}>Services:</Text>
+            <BulletList items={toArray(company.services)} />
           </View>
         ) : null}
 
@@ -208,32 +192,26 @@ function AnalysisReportDocument({
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Person Profile</Text>
             <Text style={styles.text}>Possible Titles:</Text>
-            {bulletList(toArray(person.titles))}
+            <BulletList items={toArray(person.titles)} />
           </View>
         ) : null}
 
         {report ? (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Executive Summary</Text>
-            <Text style={[styles.text, { marginBottom: 8 }]}>
-              {report.overview || "Summary unavailable."}
-            </Text>
+            <Text style={styles.text}>{report.overview || "Summary unavailable."}</Text>
             <Text style={styles.text}>Strengths:</Text>
-            {bulletList(toArray(report.strengths))}
-            <Text style={[styles.text, { marginTop: 6 }]}>Weaknesses:</Text>
-            {bulletList(toArray(report.weaknesses))}
-            <Text style={[styles.text, { marginTop: 6 }]}>Opportunities:</Text>
-            {bulletList(toArray(report.opportunities))}
-            <Text style={[styles.text, { marginTop: 6 }]}>Threats:</Text>
-            {bulletList(toArray(report.threats))}
-            <Text style={[styles.text, { marginTop: 8 }]}>
-              Digital Score: {report.digitalScore ?? "-"} / 100
-            </Text>
-            <Text style={styles.text}>
-              Authority Score: {report.authorityScore ?? "-"} / 100
-            </Text>
-            <Text style={[styles.text, { marginTop: 6 }]}>Recommended AI Products:</Text>
-            {bulletList(toArray(report.recommendedAIProducts))}
+            <BulletList items={toArray(report.strengths)} />
+            <Text style={styles.text}>Weaknesses:</Text>
+            <BulletList items={toArray(report.weaknesses)} />
+            <Text style={styles.text}>Opportunities:</Text>
+            <BulletList items={toArray(report.opportunities)} />
+            <Text style={styles.text}>Threats:</Text>
+            <BulletList items={toArray(report.threats)} />
+            <Text style={styles.text}>Digital Score: {report.digitalScore ?? "-"}/100</Text>
+            <Text style={styles.text}>Authority Score: {report.authorityScore ?? "-"}/100</Text>
+            <Text style={styles.text}>Recommended AI Products:</Text>
+            <BulletList items={toArray(report.recommendedAIProducts)} />
           </View>
         ) : (
           <View style={styles.section}>
@@ -249,13 +227,19 @@ function AnalysisReportDocument({
 }
 
 export async function GET(
-  req: NextRequest,
-  ctx: { params?: { id?: string } }
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
 ) {
-  let id = ctx?.params?.id;
+  let id: string | undefined;
+
+  if (context?.params) {
+    const resolved = await context.params;
+    id = resolved?.id;
+  }
+
   if (!id) {
     try {
-      const url = new URL(req.url);
+      const url = new URL(request.url);
       const parts = url.pathname.split("/").filter(Boolean);
       id = parts[parts.length - 2] || parts[parts.length - 1];
     } catch {}
@@ -278,22 +262,23 @@ export async function GET(
     }
 
     const row = rows[0];
-    const result = (row.result as any) || {};
-    const reportData = {
-      id: row.id,
-      query: row.query,
-      status: row.status,
-      createdAt: row.created_at,
-      updatedAt: row.updated_at,
-      insights: result.insights || {},
-      classification: result.classification || {},
-      company: result.company,
-      person: result.person,
-      report: result.report,
-    };
+    const parsedResult = typeof row.result === "string" ? JSON.parse(row.result) : row.result ?? {};
 
     const buffer = await pdf(
-      <AnalysisReportDocument data={reportData} />
+      <AnalysisReportDocument
+        data={{
+          id: row.id,
+          query: row.query,
+          status: row.status,
+          createdAt: row.created_at,
+          updatedAt: row.updated_at,
+          insights: parsedResult.insights || {},
+          classification: parsedResult.classification || {},
+          company: parsedResult.company,
+          person: parsedResult.person,
+          report: parsedResult.report,
+        }}
+      />
     ).toBuffer();
 
     return new NextResponse(buffer, {
@@ -304,9 +289,8 @@ export async function GET(
         "Cache-Control": "no-store",
       },
     });
-  } catch (err) {
-    console.error("GET /api/analyses/[id]/pdf error", err);
+  } catch (error) {
+    console.error("GET /api/analyses/[id]/pdf error", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
-
