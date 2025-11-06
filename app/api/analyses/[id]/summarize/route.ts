@@ -180,13 +180,15 @@ async function generateReport(resultPayload: any): Promise<Report> {
 
 export async function POST(
   req: NextRequest,
-  ctx: { params?: { id?: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  let id = ctx?.params?.id;
+  const resolved = await params;
+  let id: string | undefined = resolved?.id;
+
   if (!id) {
     try {
       const url = new URL(req.url);
-      const parts = url.pathname.split("/");
+      const parts = url.pathname.split("/").filter(Boolean);
       id = parts[parts.length - 2] || parts[parts.length - 1];
     } catch {}
   }
