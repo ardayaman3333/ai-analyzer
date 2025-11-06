@@ -263,7 +263,18 @@ export async function GET(
     }
 
     const row = rows[0];
-    const parsedResult = typeof row.result === "string" ? JSON.parse(row.result) : row.result ?? {};
+
+    let parsedResult: Record<string, any> = {};
+    if (typeof row.result === "string") {
+      try {
+        parsedResult = JSON.parse(row.result);
+      } catch (parseError) {
+        console.warn("Failed to parse analysis result JSON", parseError);
+        parsedResult = {};
+      }
+    } else if (row.result && typeof row.result === "object") {
+      parsedResult = row.result as Record<string, any>;
+    }
 
     const rawBuffer = await pdf(
       <AnalysisReportDocument
@@ -288,7 +299,7 @@ export async function GET(
       buffer.byteOffset + buffer.byteLength
     ) as ArrayBuffer;
 
-    const response = new Response(arrayBuffer, {
+    const response = new NextResponse(arrayBuffer, {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
