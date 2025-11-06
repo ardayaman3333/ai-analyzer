@@ -3,6 +3,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@vercel/postgres";
 import { Document, Page, StyleSheet, Text, View, pdf } from "@react-pdf/renderer";
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 type AnalysisRow = {
   id: string;
   query: string;
