@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 type Analysis = {
   id: string;
@@ -374,15 +375,27 @@ export default function AnalysisDetailPage() {
         <section className="rounded-lg border p-4 bg-card text-card-foreground">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-lg font-semibold">Executive Summary</h2>
-            {!report && (
-              <button
-                className="rounded-md border bg-background px-3 py-1 text-sm hover:bg-accent hover:text-accent-foreground disabled:opacity-60"
-                disabled={reportLoading || status !== "completed"}
-                onClick={() => generateReport(false)}
-              >
-                {reportLoading ? "Generating..." : "Generate Report"}
-              </button>
-            )}
+            <div className="flex items-center gap-2">
+              {!report && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={reportLoading || status !== "completed"}
+                  onClick={() => generateReport(false)}
+                >
+                  {reportLoading ? "Generating..." : "Generate Report"}
+                </Button>
+              )}
+              <Button asChild variant="outline" size="sm">
+                <a
+                  href={`/api/analyses/${id}/pdf`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Download PDF
+                </a>
+              </Button>
+            </div>
           </div>
           {reportError && (
             <div className="text-red-600 text-sm mb-2">{reportError}</div>
@@ -444,12 +457,13 @@ export default function AnalysisDetailPage() {
                 </div>
               </div>
               <div>
-                <button
-                  className="rounded-md border bg-background px-3 py-1 text-sm hover:bg-accent hover:text-accent-foreground"
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={() => generateReport(true)}
                 >
                   Regenerate
-                </button>
+                </Button>
               </div>
             </div>
           ) : (
