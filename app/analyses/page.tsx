@@ -2,7 +2,7 @@ import Link from "next/link";
 import { headers } from "next/headers";
 
 async function fetchAnalyses() {
-  const hdrs = headers();
+  const hdrs = await headers();
   const getHeader = (name: string) => {
     const lower = name.toLowerCase();
     // Some runtimes expose a Headers-like object, others a plain record
