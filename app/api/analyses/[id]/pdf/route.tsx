@@ -226,9 +226,11 @@ function AnalysisReportDocument({
   );
 }
 
+type RouteContext = { params: Promise<{ id: string }> };
+
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: RouteContext
 ) {
   const resolved = await params;
   let id: string | undefined = resolved?.id;
@@ -278,7 +280,10 @@ export async function GET(
     ).toBuffer();
 
     const buffer = rawBuffer as unknown as Uint8Array;
-    const arrayBuffer = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
+    const arrayBuffer = buffer.buffer.slice(
+      buffer.byteOffset,
+      buffer.byteOffset + buffer.byteLength
+    ) as ArrayBuffer;
 
     const response = new Response(arrayBuffer, {
       status: 200,
@@ -289,7 +294,7 @@ export async function GET(
       },
     });
 
-    return NextResponse.fromResponse(response);
+    return response;
   } catch (error) {
     console.error("GET /api/analyses/[id]/pdf error", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });

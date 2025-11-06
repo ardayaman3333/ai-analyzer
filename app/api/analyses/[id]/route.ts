@@ -10,9 +10,11 @@ type AnalysisRow = {
   updated_at: string | null;
 };
 
+type RouteContext = { params: Promise<{ id: string }> };
+
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: RouteContext
 ) {
   let id: string | undefined;
 
