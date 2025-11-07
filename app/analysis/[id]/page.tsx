@@ -466,7 +466,7 @@ export default function AnalysisDetailPage() {
           <h2 className="mt-2 text-2xl font-semibold text-white">Related search inventory</h2>
           {expandedQueries.length ? (
             <ul className="mt-4 list-disc space-y-1 pl-5 text-sm text-slate-200">
-              {expandedQueries.map((query, idx) => (
+              {expandedQueries.map((query: string, idx: number) => (
                 <li key={idx}>{query}</li>
               ))}
             </ul>
