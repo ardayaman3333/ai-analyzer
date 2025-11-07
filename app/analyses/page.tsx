@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { headers } from "next/headers";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 type SearchParams = {
   [key: string]: string | string[] | undefined;
 };
