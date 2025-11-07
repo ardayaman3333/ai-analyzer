@@ -31,7 +31,6 @@ export function FilterControls({ currentFilter, sortOrder }: Props) {
     const query = params.toString();
     const url = query ? `${pathname}?${query}` : pathname;
     router.push(url, { scroll: false });
-    router.refresh();
   };
 
   return (
