@@ -16,17 +16,17 @@ const highlightCards: HighlightCard[] = [
   {
     tag: "Discovery",
     title: "Web intelligence graph",
-    description: "Alias, domain, pricing ve sosyal ayak izlerini tek akışta toparla.",
+    description: "Collect aliases, domains, pricing hints and social footprint in one flow.",
   },
   {
     tag: "Insight",
     title: "Company & talent lens",
-    description: "Kurum ya da kişi profillerini sektör, hizmet ve kariyer katmanında ayrıştır.",
+    description: "Split company vs. talent signals across sector, service and career layers.",
   },
   {
     tag: "Action",
     title: "AI-ready opportunities",
-    description: "Pain point haritasına göre teklif edilebilir yapay zeka çözümlerini öner.",
+    description: "Map the pain points and surface AI solutions worth pitching.",
   },
 ];
 
@@ -42,7 +42,7 @@ export default function Home() {
     setMessageType("");
 
     if (!query.trim()) {
-      setMessage("Lütfen analiz edilecek bir marka, kişi veya kurum adı girin.");
+      setMessage("Please enter a brand, person or organization to analyze.");
       setMessageType("error");
       return;
     }
@@ -59,11 +59,11 @@ export default function Home() {
       });
 
       if (!response.ok) {
-        throw new Error("Sunucuda bir hata oluştu.");
+        throw new Error("Server returned an error.");
       }
 
       const result = await response.json();
-      setMessage(`Talep alındı. Analiz ID: ${result.analysisId}`);
+      setMessage(`Request accepted. Analysis ID: ${result.analysisId}`);
       setMessageType("success");
       setQuery("");
 
@@ -71,7 +71,7 @@ export default function Home() {
         router.push(`/analysis/${result.analysisId}`);
       }
     } catch (error) {
-      setMessage("Analiz talebi gönderilemedi. Lütfen tekrar deneyin.");
+      setMessage("Analysis request failed. Please try again.");
       setMessageType("error");
     } finally {
       setIsLoading(false);
@@ -93,20 +93,20 @@ export default function Home() {
                 NexusAI
               </span>
               <span className="mt-2 block text-slate-200">
-                web üzerindeki tüm sinyalleri tek raporda toplar.
+                unifies every public signal in a single report.
               </span>
             </h1>
             <p className="mt-6 max-w-2xl text-lg text-slate-300">
-              Marka, kurum veya kişiye dair açık-web verilerini tarayıp Firecrawl, Brave Search ve
-              OpenAI zinciriyle anlamlı içgörülere dönüştürür. Kurumsal kararlar için production-ready analizler.
+              Crawl public web data for brands, companies or people using Firecrawl, Brave Search and
+              OpenAI chains to craft decision-ready intelligence.
             </p>
 
             <div className="mt-8 rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
-              <p className="text-sm uppercase tracking-widest text-slate-300">Yeni analiz başlat</p>
+              <p className="text-sm uppercase tracking-widest text-slate-300">Start a fresh analysis</p>
               <div className="mt-4 flex flex-col gap-3 md:flex-row">
                 <Input
                   type="text"
-                  placeholder="Örn: 'VisionFast AI Solutions'"
+                  placeholder="e.g. “VisionFast AI Solutions”"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   disabled={isLoading}
@@ -118,7 +118,7 @@ export default function Home() {
                   disabled={isLoading}
                   className="w-full bg-gradient-to-r from-sky-400 via-indigo-500 to-fuchsia-500 text-white shadow-lg shadow-indigo-500/30 transition hover:opacity-90 md:w-auto"
                 >
-                  {isLoading ? "Analiz ediliyor..." : "Analize Başla"}
+                  {isLoading ? "Processing..." : "Run analysis"}
                 </Button>
               </div>
 
@@ -135,7 +135,7 @@ export default function Home() {
 
             <div className="mt-8 flex flex-wrap gap-4 text-sm text-slate-300">
               <div className="rounded-full border border-white/10 bg-white/5 px-4 py-2">
-                Çoklu analiz kuyruğu
+                Parallel analysis queue
               </div>
               <div className="rounded-full border border-white/10 bg-white/5 px-4 py-2">
                 Executive summary + PDF
@@ -152,21 +152,21 @@ export default function Home() {
                 <p className="text-sm uppercase tracking-[0.3em] text-slate-300">Pipeline</p>
                 <h3 className="mt-2 text-2xl font-semibold text-white">Web → Insights → Strategy</h3>
                 <p className="mt-3 text-sm text-slate-300">
-                  Brave Search sonuçları, Firecrawl taramaları ve OpenAI özetleyicisi tek raporda toplanır.
+                  Brave Search, Firecrawl crawls and OpenAI summaries collapse into a single playbook.
                 </p>
               </div>
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                  <p className="text-slate-400">Durum</p>
-                  <p className="text-lg font-semibold text-white">Asenkron</p>
+                  <p className="text-slate-400">Mode</p>
+                  <p className="text-lg font-semibold text-white">Asynchronous</p>
                 </div>
                 <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                  <p className="text-slate-400">Teslim</p>
+                  <p className="text-slate-400">Delivery</p>
                   <p className="text-lg font-semibold text-white">PDF + Dashboard</p>
                 </div>
               </div>
               <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-slate-200">
-                “NexusAI, dijital otoriteyi skorlayıp SWOT + AI çözüm planını birlikte sunar.”
+                “NexusAI scores digital authority and ships SWOT + AI playbooks together.”
               </div>
             </div>
           </div>
