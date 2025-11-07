@@ -1,7 +1,7 @@
 import React from "react";
 import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@vercel/postgres";
-import { Document, Page, StyleSheet, Text, View, pdf } from "@react-pdf/renderer";
+import { Document, Page, StyleSheet, Text, View, renderToStream } from "@react-pdf/renderer";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -276,7 +276,7 @@ export async function GET(
       parsedResult = row.result as Record<string, any>;
     }
 
-    const rawBuffer = await pdf(
+    const pdfStream = await renderToStream(
       <AnalysisReportDocument
         data={{
           id: row.id,
@@ -291,13 +291,22 @@ export async function GET(
           report: parsedResult.report,
         }}
       />
-    ).toBuffer();
+    );
 
-    const raw = rawBuffer as unknown;
-    const nodeBuffer =
-      typeof Buffer !== "undefined" && Buffer.isBuffer(raw)
-        ? (raw as Buffer)
-        : Buffer.from(raw as Uint8Array);
+    const chunks: Buffer[] = [];
+    const stream = pdfStream as AsyncIterable<Buffer | Uint8Array | string>;
+    for await (const rawChunk of stream) {
+      const chunk = rawChunk as Buffer | Uint8Array | string;
+      if (typeof chunk === "string") {
+        chunks.push(Buffer.from(chunk));
+      } else if (Buffer.isBuffer(chunk)) {
+        chunks.push(chunk);
+      } else if (chunk instanceof Uint8Array) {
+        chunks.push(Buffer.from(chunk));
+      }
+    }
+
+    const nodeBuffer = Buffer.concat(chunks);
 
     const response = new NextResponse(nodeBuffer as unknown as BodyInit, {
       status: 200,
