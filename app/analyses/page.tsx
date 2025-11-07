@@ -1,11 +1,14 @@
 import Link from "next/link";
 import { headers } from "next/headers";
 
+type SearchParams = {
+  [key: string]: string | string[] | undefined;
+};
+
 async function fetchAnalyses() {
   const hdrs = await headers();
   const getHeader = (name: string) => {
     const lower = name.toLowerCase();
-    // Some runtimes expose a Headers-like object, others a plain record
     if (typeof (hdrs as Headers).get === "function") {
       return (hdrs as Headers).get(name);
     }
@@ -22,7 +25,23 @@ async function fetchAnalyses() {
   return res.json();
 }
 
-export default async function AnalysesPage() {
+const statusFilters = [
+  { label: "All", value: "all" },
+  { label: "Active", value: "active" },
+  { label: "Completed", value: "completed" },
+  { label: "Failed", value: "failed" },
+];
+
+function buildQuery(params: Record<string, string | undefined>) {
+  const query = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value && value !== "all") query.set(key, value);
+  });
+  const str = query.toString();
+  return str ? `?${str}` : "";
+}
+
+export default async function AnalysesPage({ searchParams }: { searchParams: SearchParams }) {
   const items = (await fetchAnalyses()) as Array<{
     id: string;
     query: string;
@@ -32,6 +51,24 @@ export default async function AnalysesPage() {
     createdAt?: string | null;
     updatedAt?: string | null;
   }>;
+
+  const filterValue =
+    typeof searchParams.status === "string" ? searchParams.status.toLowerCase() : "all";
+  const sortOrder = searchParams.sort === "asc" ? "asc" : "desc";
+
+  const sortedItems = [...items].sort((a, b) => {
+    const aTime = new Date(a.updatedAt ?? a.createdAt ?? "").getTime() || 0;
+    const bTime = new Date(b.updatedAt ?? b.createdAt ?? "").getTime() || 0;
+    return sortOrder === "asc" ? aTime - bTime : bTime - aTime;
+  });
+
+  const filteredItems = sortedItems.filter((item) => {
+    if (filterValue === "all") return true;
+    if (filterValue === "completed") return item.status === "completed";
+    if (filterValue === "failed") return item.status === "failed";
+    if (filterValue === "active") return item.status !== "completed" && item.status !== "failed";
+    return true;
+  });
 
   const total = items.length;
   const completed = items.filter((it) => it.status === "completed").length;
@@ -70,6 +107,40 @@ export default async function AnalysesPage() {
               + New analysis
             </Link>
           </div>
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex flex-wrap gap-2 text-xs font-semibold text-slate-300">
+              {statusFilters.map((filter) => {
+                const href = `/analyses${buildQuery({
+                  status: filter.value,
+                  sort: sortOrder === "asc" ? "asc" : undefined,
+                })}`;
+                const isActive = filter.value === filterValue;
+                return (
+                  <Link
+                    key={filter.value}
+                    href={href}
+                    className={`rounded-full border px-3 py-1 transition ${
+                      isActive ? "border-white text-white" : "border-white/20 text-slate-400 hover:border-white/40"
+                    }`}
+                  >
+                    {filter.label}
+                  </Link>
+                );
+              })}
+            </div>
+            <div className="text-xs text-slate-300">
+              <span className="mr-2 uppercase tracking-[0.3em]">Sort</span>
+              <Link
+                href={`/analyses${buildQuery({
+                  status: filterValue,
+                  sort: sortOrder === "asc" ? "desc" : "asc",
+                })}`}
+                className="rounded-full border border-white/20 px-3 py-1 transition hover:border-white/40"
+              >
+                {sortOrder === "asc" ? "Oldest → Newest" : "Newest → Oldest"}
+              </Link>
+            </div>
+          </div>
         </header>
 
         <section className="grid gap-4 md:grid-cols-3">
@@ -87,13 +158,13 @@ export default async function AnalysesPage() {
           </div>
         </section>
 
-        {items.length === 0 ? (
+        {filteredItems.length === 0 ? (
           <div className="rounded-3xl border border-dashed border-white/20 bg-white/5 p-10 text-center text-slate-300">
-            No analyses yet. Launch one from the home screen to see it listed here.
+            No analyses match the selected filters.
           </div>
         ) : (
           <section className="grid gap-4 md:grid-cols-2">
-            {items.map((it) => (
+            {filteredItems.map((it) => (
               <div
                 key={it.id}
                 className="rounded-3xl border border-white/10 bg-white/5 p-5 backdrop-blur transition hover:border-white/30"
@@ -106,18 +177,10 @@ export default async function AnalysesPage() {
                     <h3 className="mt-2 line-clamp-2 text-xl font-semibold text-white">{it.query}</h3>
                   </div>
                   <div className="flex flex-col items-end gap-2 text-xs">
-                    <span
-                      className={`inline-flex items-center rounded-full border px-3 py-1 font-semibold ${statusColor(
-                        it.status
-                      )}`}
-                    >
+                    <span className={`inline-flex items-center rounded-full border px-3 py-1 font-semibold ${statusColor(it.status)}`}>
                       {it.status}
                     </span>
-                    <span
-                      className={`inline-flex items-center rounded-full border px-3 py-1 font-semibold ${reportColor(
-                        it.reportReady
-                      )}`}
-                    >
+                    <span className={`inline-flex items-center rounded-full border px-3 py-1 font-semibold ${reportColor(it.reportReady)}`}>
                       {it.reportReady ? "Report ready" : "Report pending"}
                     </span>
                   </div>
