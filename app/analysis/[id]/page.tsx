@@ -134,11 +134,11 @@ export default function AnalysisDetailPage() {
               </p>
               {error && <p className="mt-2 text-sm text-rose-400">{error}</p>}
             </div>
-            <div className="flex flex-col items-start gap-3 lg:items-end">
+            <div className="flex flex-col items-start gap-4 lg:items-end">
               <span className={`inline-flex items-center rounded-full border px-4 py-1 text-sm font-semibold ${statusBadge}`}>
                 {status}
               </span>
-              <div className="flex flex-wrap gap-3">
+              <div className="flex flex-wrap items-center justify-end gap-3">
                 <a
                   href={`/api/analyses/${id}/pdf`}
                   target="_blank"
@@ -147,14 +147,16 @@ export default function AnalysisDetailPage() {
                 >
                   Download PDF
                 </a>
-                <Button
-                  size="sm"
-                  onClick={handleSummary}
-                  disabled={reportLoading || status !== "completed"}
-                  className="bg-gradient-to-r from-sky-400 via-indigo-500 to-fuchsia-500 text-white hover:opacity-90"
-                >
-                  {reportLoading ? "Working..." : report ? "Regenerate summary" : "Generate summary"}
-                </Button>
+                <div className="flex items-center">
+                  <Button
+                    size="sm"
+                    onClick={handleSummary}
+                    disabled={reportLoading || status !== "completed"}
+                    className="w-full bg-gradient-to-r from-sky-400 via-indigo-500 to-fuchsia-500 text-white hover:opacity-90"
+                  >
+                    {reportLoading ? "Working..." : report ? "Regenerate summary" : "Generate summary"}
+                  </Button>
+                </div>
               </div>
               {reportError && <p className="text-xs text-rose-400">{reportError}</p>}
             </div>
@@ -199,7 +201,7 @@ export default function AnalysisDetailPage() {
                   ))}
                 </div>
               ) : (
-                <p className="mt-2 text-sm text-slate-400">-</p>
+                <p className="mt-2 text-sm text-slate-400">No alternate names detected yet.</p>
               )}
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
@@ -213,7 +215,7 @@ export default function AnalysisDetailPage() {
                   ))}
                 </div>
               ) : (
-                <p className="mt-2 text-sm text-slate-400">-</p>
+                <p className="mt-2 text-sm text-slate-400">No public social accounts were detected.</p>
               )}
             </div>
           </div>
@@ -234,7 +236,13 @@ export default function AnalysisDetailPage() {
                     ))}
                   </ul>
                 ) : (
-                  <p className="mt-2 text-slate-400">-</p>
+                  <p className="mt-2 text-slate-400">
+                    {block.label === "Emails"
+                      ? "No public email addresses discovered."
+                      : block.label === "Phones"
+                      ? "No phone numbers available yet."
+                      : "No geographic hints surfaced so far."}
+                  </p>
                 )}
               </div>
             ))}
@@ -257,7 +265,11 @@ export default function AnalysisDetailPage() {
                     ))}
                   </ul>
                 ) : (
-                  <p className="mt-2 text-slate-400">-</p>
+                  <p className="mt-2 text-slate-400">
+                    {block.label === "Contact pages"
+                      ? "No contact endpoints captured yet."
+                      : "Pricing transparency not discovered."}
+                  </p>
                 )}
               </div>
             ))}
