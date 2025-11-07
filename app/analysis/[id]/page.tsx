@@ -50,17 +50,21 @@ export default function AnalysisDetailPage() {
   const status = data?.status ?? (loading ? "loading" : "unknown");
   const result = data?.result ?? {};
 
-  const insights = useMemo(() => ({
-    primaryDomain: result?.insights?.primaryDomain || null,
-    aliases: (result?.insights?.aliases as string[]) || [],
-    socials: (result?.insights?.socials as Record<string, string[]>) || {},
-    contactPages: (result?.insights?.contactPages as string[]) || [],
-    pricingPages: (result?.insights?.pricingPages as string[]) || [],
-    emails: (result?.insights?.emails as string[]) || [],
-    phones: (result?.insights?.phones as string[]) || [],
-    locations: (result?.insights?.locations as string[]) || [],
-    domainHighlights: (result?.insights?.domainHighlights as Array<{ domain: string; count: number }>) || [],
-  }), [result]);
+  const insights = useMemo(
+    () => ({
+      primaryDomain: result?.insights?.primaryDomain || null,
+      aliases: (result?.insights?.aliases as string[]) || [],
+      socials: (result?.insights?.socials as Record<string, string[]>) || {},
+      contactPages: (result?.insights?.contactPages as string[]) || [],
+      pricingPages: (result?.insights?.pricingPages as string[]) || [],
+      emails: (result?.insights?.emails as string[]) || [],
+      phones: (result?.insights?.phones as string[]) || [],
+      locations: (result?.insights?.locations as string[]) || [],
+      domainHighlights:
+        (result?.insights?.domainHighlights as Array<{ domain: string; count: number }>) || [],
+    }),
+    [result]
+  );
 
   const report = result?.report as
     | {
@@ -91,457 +95,441 @@ export default function AnalysisDetailPage() {
     }
   }
 
+  const formatDate = (value?: string | null) =>
+    value ? new Date(value).toLocaleString() : "-";
+
+  const expandedQueries = Array.isArray(result.expandedQueries) ? result.expandedQueries : [];
+  const samples = Array.isArray(result.samples) ? result.samples : [];
+  const classificationType = result?.classification?.type ?? "unknown";
+  const company = result?.company;
+  const person = result?.person;
+
+  const statusBadge =
+    status === "completed"
+      ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
+      : status === "failed"
+      ? "border-rose-500/30 bg-rose-500/10 text-rose-300"
+      : "border-amber-500/30 bg-amber-500/10 text-amber-300";
+
+  const summaryStats = [
+    { label: "Query", value: data?.query ?? (loading ? "Loading..." : "-") },
+    { label: "Created", value: formatDate(data?.createdAt) },
+    { label: "Updated", value: formatDate(data?.updatedAt) },
+    { label: "Type", value: classificationType },
+  ];
+
+  const handleSummary = () => generateReport(Boolean(report));
+
   return (
-    <main className="flex min-h-screen flex-col items-center p-8 gap-6">
-      <div className="w-full max-w-5xl space-y-6">
-        <div className="flex items-start justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">Analysis</h1>
-            <div className="mt-1 text-sm text-muted-foreground">ID</div>
-            <div className="font-mono text-xs break-all">{id}</div>
-          </div>
-          <div className="text-right">
-            <div className="text-sm text-muted-foreground">Status</div>
-            <span className={
-              "inline-flex items-center gap-2 rounded-full border px-3 py-1 text-sm " +
-              (status === "completed" ? "text-green-600" : status === "failed" ? "text-red-600" : "text-amber-600")
-            }>
-              {status}
-            </span>
-          </div>
-        </div>
-
-        <div className="rounded-lg border p-4 bg-card text-card-foreground">
-          <div className="text-sm text-muted-foreground">Query</div>
-          <div className="font-medium">{data?.query ?? "-"}</div>
-        </div>
-
-        {/* Insights */}
-        <section className="rounded-lg border p-4 bg-card text-card-foreground">
-          <h2 className="text-lg font-semibold mb-3">Insights</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <main className="relative min-h-screen bg-slate-950 px-6 py-16 text-white">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(56,189,248,0.15),_transparent_60%),radial-gradient(circle_at_80%_0,_rgba(248,113,113,0.12),_transparent_55%)]" />
+      <div className="relative z-10 mx-auto flex max-w-6xl flex-col gap-10">
+        <section className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
             <div>
-              <div className="text-sm text-muted-foreground mb-1">Primary Domain</div>
-              <div className="text-sm break-all">
-                {insights.primaryDomain ? (
-                  <a href={`https://${insights.primaryDomain}`} target="_blank" rel="noreferrer" className="underline underline-offset-2">
-                    {insights.primaryDomain}
-                  </a>
-                ) : (
-                  <span className="text-muted-foreground">-</span>
-                )}
-              </div>
+              <p className="text-xs uppercase tracking-[0.3em] text-slate-300">Analysis detail</p>
+              <h1 className="mt-4 text-4xl font-semibold">Signal breakdown</h1>
+              <p className="mt-2 text-sm text-slate-300">
+                ID: <span className="font-mono text-xs">{id}</span>
+              </p>
+              {error && <p className="mt-2 text-sm text-rose-400">{error}</p>}
             </div>
-            <div>
-              <div className="text-sm text-muted-foreground mb-1">Aliases</div>
-              {insights.aliases?.length ? (
-                <div className="flex flex-wrap gap-2">
-                  {insights.aliases.map((a, i) => (
-                    <span key={i} className="rounded-full border px-2 py-0.5 text-xs">{a}</span>
-                  ))}
-                </div>
+            <div className="flex flex-col items-start gap-3 lg:items-end">
+              <span className={`inline-flex items-center rounded-full border px-4 py-1 text-sm font-semibold ${statusBadge}`}>
+                {status}
+              </span>
+              <div className="flex flex-wrap gap-3">
+                <a
+                  href={`/api/analyses/${id}/pdf`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center rounded-full border border-white/30 px-4 py-2 text-sm font-semibold text-slate-100 transition hover:border-white hover:text-white"
+                >
+                  Download PDF
+                </a>
+                <Button
+                  size="sm"
+                  onClick={handleSummary}
+                  disabled={reportLoading || status !== "completed"}
+                  className="bg-gradient-to-r from-sky-400 via-indigo-500 to-fuchsia-500 text-white hover:opacity-90"
+                >
+                  {reportLoading ? "Working..." : report ? "Regenerate summary" : "Generate summary"}
+                </Button>
+              </div>
+              {reportError && <p className="text-xs text-rose-400">{reportError}</p>}
+            </div>
+          </div>
+          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {summaryStats.map((stat) => (
+              <div key={stat.label} className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <p className="text-xs uppercase tracking-[0.3em] text-slate-400">{stat.label}</p>
+                <p className="mt-2 text-lg font-semibold text-white">{stat.value}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur">
+          <p className="text-xs uppercase tracking-[0.3em] text-slate-300">Signal map</p>
+          <h2 className="mt-2 text-2xl font-semibold text-white">Insights</h2>
+          <div className="mt-6 grid gap-4 md:grid-cols-3">
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+              <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Primary domain</p>
+              {insights.primaryDomain ? (
+                <a
+                  href={`https://${insights.primaryDomain}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-2 block text-lg font-semibold text-white underline-offset-2 hover:underline"
+                >
+                  {insights.primaryDomain}
+                </a>
               ) : (
-                <span className="text-sm text-muted-foreground">-</span>
+                <p className="mt-2 text-sm text-slate-400">Not detected</p>
               )}
             </div>
-            <div>
-              <div className="text-sm text-muted-foreground mb-1">Socials</div>
-              {Object.keys(insights.socials).length ? (
-                <div className="flex flex-wrap gap-2">
-                  {Object.entries(insights.socials).map(([k, arr]) => (
-                    <span key={k} className="rounded-full border px-2 py-0.5 text-xs">
-                      {k}: {arr.length}
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+              <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Aliases</p>
+              {insights.aliases.length ? (
+                <div className="mt-2 flex flex-wrap gap-2 text-sm text-slate-200">
+                  {insights.aliases.map((alias, idx) => (
+                    <span key={idx} className="rounded-full border border-white/20 px-3 py-1">
+                      {alias}
                     </span>
                   ))}
                 </div>
               ) : (
-                <span className="text-sm text-muted-foreground">-</span>
+                <p className="mt-2 text-sm text-slate-400">-</p>
               )}
             </div>
-          </div>
-
-          <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <div className="text-sm text-muted-foreground mb-1">Emails</div>
-              {insights.emails.length ? (
-                <ul className="list-disc list-inside text-sm text-muted-foreground">
-                  {insights.emails.slice(0, 4).map((mail, i) => (
-                    <li key={i}>{mail}</li>
-                  ))}
-                </ul>
-              ) : (
-                <span className="text-sm text-muted-foreground">-</span>
-              )}
-            </div>
-            <div>
-              <div className="text-sm text-muted-foreground mb-1">Phones</div>
-              {insights.phones.length ? (
-                <ul className="list-disc list-inside text-sm text-muted-foreground">
-                  {insights.phones.slice(0, 4).map((phone, i) => (
-                    <li key={i}>{phone}</li>
-                  ))}
-                </ul>
-              ) : (
-                <span className="text-sm text-muted-foreground">-</span>
-              )}
-            </div>
-            <div>
-              <div className="text-sm text-muted-foreground mb-1">Locations</div>
-              {insights.locations.length ? (
-                <div className="flex flex-wrap gap-2">
-                  {insights.locations.map((loc, i) => (
-                    <span key={i} className="rounded-full border px-2 py-0.5 text-xs">{loc}</span>
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+              <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Social channels</p>
+              {Object.keys(insights.socials).length ? (
+                <div className="mt-2 flex flex-wrap gap-2 text-sm text-slate-200">
+                  {Object.entries(insights.socials).map(([platform, links]) => (
+                    <span key={platform} className="rounded-full border border-white/20 px-3 py-1">
+                      {platform}: {links.length}
+                    </span>
                   ))}
                 </div>
               ) : (
-                <span className="text-sm text-muted-foreground">-</span>
+                <p className="mt-2 text-sm text-slate-400">-</p>
               )}
             </div>
           </div>
-
-          <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <div className="text-sm text-muted-foreground mb-1">Contact Pages</div>
-              {insights.contactPages.length ? (
-                <ul className="list-disc list-inside text-sm">
-                  {insights.contactPages.map((u, i) => (
-                    <li key={i} className="break-all">
-                      <a className="underline underline-offset-2" href={u} target="_blank" rel="noreferrer">
-                        {u}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <span className="text-sm text-muted-foreground">-</span>
-              )}
-            </div>
-            <div>
-              <div className="text-sm text-muted-foreground mb-1">Pricing Pages</div>
-              {insights.pricingPages.length ? (
-                <ul className="list-disc list-inside text-sm">
-                  {insights.pricingPages.map((u, i) => (
-                    <li key={i} className="break-all">
-                      <a className="underline underline-offset-2" href={u} target="_blank" rel="noreferrer">
-                        {u}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <span className="text-sm text-muted-foreground">-</span>
-              )}
-            </div>
+          <div className="mt-5 grid gap-4 md:grid-cols-3">
+            {[
+              { label: "Emails", values: insights.emails },
+              { label: "Phones", values: insights.phones },
+              { label: "Locations", values: insights.locations },
+            ].map((block) => (
+              <div key={block.label} className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-slate-200">
+                <p className="text-xs uppercase tracking-[0.3em] text-slate-400">{block.label}</p>
+                {block.values.length ? (
+                  <ul className="mt-2 space-y-1">
+                    {block.values.slice(0, 6).map((value, index) => (
+                      <li key={index} className="break-all text-white/90">
+                        {value}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="mt-2 text-slate-400">-</p>
+                )}
+              </div>
+            ))}
           </div>
-
+          <div className="mt-5 grid gap-4 md:grid-cols-2">
+            {[
+              { label: "Contact pages", values: insights.contactPages },
+              { label: "Pricing pages", values: insights.pricingPages },
+            ].map((block) => (
+              <div key={block.label} className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-slate-200">
+                <p className="text-xs uppercase tracking-[0.3em] text-slate-400">{block.label}</p>
+                {block.values.length ? (
+                  <ul className="mt-2 space-y-2">
+                    {block.values.map((url, index) => (
+                      <li key={index} className="break-all">
+                        <a href={url} target="_blank" rel="noreferrer" className="text-sky-200 underline-offset-2 hover:underline">
+                          {url}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="mt-2 text-slate-400">-</p>
+                )}
+              </div>
+            ))}
+          </div>
           {insights.domainHighlights.length ? (
-            <div className="mt-4 text-sm">
-              <div className="text-sm text-muted-foreground mb-1">Top Domains Mentioned</div>
-              <div className="flex flex-wrap gap-2">
-                {insights.domainHighlights.map((item, i) => (
-                  <span key={i} className="rounded-full border px-2 py-0.5 text-xs">
+            <div className="mt-5 rounded-2xl border border-white/10 bg-white/5 p-4">
+              <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Top mentioned domains</p>
+              <div className="mt-3 flex flex-wrap gap-2 text-sm text-white/90">
+                {insights.domainHighlights.map((item, idx) => (
+                  <span key={idx} className="rounded-full border border-white/20 px-3 py-1">
                     {item.domain} ({item.count})
                   </span>
                 ))}
               </div>
             </div>
           ) : null}
-
           {Object.keys(insights.socials).length ? (
-            <div className="mt-3 text-sm">
-              <details>
-                <summary className="cursor-pointer text-muted-foreground">View social links</summary>
-                <div className="mt-2 space-y-2">
-                  {Object.entries(insights.socials).map(([k, arr]) => (
-                    <div key={k}>
-                      <div className="font-medium mb-1">{k}</div>
-                      <ul className="list-disc list-inside space-y-1">
-                        {arr.map((u, i) => (
-                          <li key={i} className="break-all">
-                            <a href={u} target="_blank" rel="noreferrer" className="underline underline-offset-2">{u}</a>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  ))}
-                </div>
-              </details>
-            </div>
+            <details className="mt-5 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-slate-200">
+              <summary className="cursor-pointer text-xs uppercase tracking-[0.3em] text-slate-400">
+                View social links
+              </summary>
+              <div className="mt-3 space-y-4">
+                {Object.entries(insights.socials).map(([platform, urls]) => (
+                  <div key={platform}>
+                    <p className="font-semibold text-white">{platform}</p>
+                    <ul className="mt-1 space-y-1">
+                      {urls.map((url, index) => (
+                        <li key={index} className="break-all text-slate-300">
+                          <a href={url} target="_blank" rel="noreferrer" className="underline underline-offset-2">
+                            {url}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            </details>
           ) : null}
         </section>
 
-        {/* Classification */}
-        <section className="rounded-lg border p-4 bg-card text-card-foreground">
-          <h2 className="text-lg font-semibold mb-3">Classification</h2>
-          <div className="text-sm">
-            <div>
-              <span className="text-muted-foreground">Type:</span>{" "}
-              <span className="font-medium">{result?.classification?.type ?? "unknown"}</span>
+        <section className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur">
+          <p className="text-xs uppercase tracking-[0.3em] text-slate-300">Classification layer</p>
+          <h2 className="mt-2 text-2xl font-semibold text-white">Entity profile</h2>
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+              <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Type</p>
+              <p className="mt-2 text-lg font-semibold text-white">{classificationType}</p>
+              {typeof result?.classification?.confidence === "number" && (
+                <p className="text-sm text-slate-300">
+                  Confidence: {(result.classification.confidence * 100).toFixed(0)}%
+                </p>
+              )}
             </div>
-            {typeof result?.classification?.confidence === "number" && (
-              <div className="text-muted-foreground">Confidence: {(result.classification.confidence * 100).toFixed(0)}%</div>
-            )}
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+              <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Aliases detected</p>
+              <p className="mt-2 text-lg font-semibold text-white">{insights.aliases.length || "-"}</p>
+            </div>
           </div>
+
+          {classificationType === "company" && company && (
+            <div className="mt-6 grid gap-4 md:grid-cols-3">
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Logo</p>
+                {company.logoUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={company.logoUrl} alt="logo" className="mt-3 h-12 w-12 rounded border border-white/10 bg-white/80 object-contain p-2" />
+                ) : (
+                  <p className="mt-2 text-sm text-slate-400">-</p>
+                )}
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Sectors</p>
+                {Array.isArray(company.sectors) && company.sectors.length ? (
+                  <div className="mt-2 flex flex-wrap gap-2 text-sm text-slate-200">
+                    {company.sectors.map((sector: string, idx: number) => (
+                      <span key={idx} className="rounded-full border border-white/20 px-3 py-1">
+                        {sector}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mt-2 text-sm text-slate-400">-</p>
+                )}
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Services</p>
+                {Array.isArray(company.services) && company.services.length ? (
+                  <div className="mt-2 flex flex-wrap gap-2 text-sm text-slate-200">
+                    {company.services.map((svc: string, idx: number) => (
+                      <span key={idx} className="rounded-full border border-white/20 px-3 py-1">
+                        {svc}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mt-2 text-sm text-slate-400">-</p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {classificationType === "person" && person && (
+            <div className="mt-6 grid gap-4 md:grid-cols-3">
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Titles</p>
+                {Array.isArray(person.titles) && person.titles.length ? (
+                  <div className="mt-2 flex flex-wrap gap-2 text-sm text-slate-200">
+                    {person.titles.map((title: string, idx: number) => (
+                      <span key={idx} className="rounded-full border border-white/20 px-3 py-1">
+                        {title}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mt-2 text-sm text-slate-400">-</p>
+                )}
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Locations</p>
+                {insights.locations.length ? (
+                  <div className="mt-2 flex flex-wrap gap-2 text-sm text-slate-200">
+                    {insights.locations.map((loc, idx) => (
+                      <span key={idx} className="rounded-full border border-white/20 px-3 py-1">
+                        {loc}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mt-2 text-sm text-slate-400">-</p>
+                )}
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Emails</p>
+                {insights.emails.length ? (
+                  <div className="mt-2 space-y-1 text-sm text-slate-200">
+                    {insights.emails.slice(0, 4).map((email, idx) => (
+                      <div key={idx}>{email}</div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mt-2 text-sm text-slate-400">-</p>
+                )}
+              </div>
+            </div>
+          )}
         </section>
 
-        {/* Company Profile */}
-        {result?.classification?.type === "company" && (
-          <section className="rounded-lg border p-4 bg-card text-card-foreground">
-            <h2 className="text-lg font-semibold mb-3">Company Profile</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <div className="text-sm text-muted-foreground mb-1">Logo</div>
-                {result?.company?.logoUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={result.company.logoUrl} alt="logo" className="h-10 w-10" />
-                ) : (
-                  <span className="text-sm text-muted-foreground">-</span>
-                )}
-              </div>
-              <div>
-                <div className="text-sm text-muted-foreground mb-1">Sectors</div>
-                {Array.isArray(result?.company?.sectors) && result.company.sectors.length ? (
-                  <div className="flex flex-wrap gap-2">
-                    {result.company.sectors.map((s: string, i: number) => (
-                      <span key={i} className="rounded-full border px-2 py-0.5 text-xs">{s}</span>
-                    ))}
-                  </div>
-                ) : (
-                  <span className="text-sm text-muted-foreground">-</span>
-                )}
-              </div>
-              <div>
-                <div className="text-sm text-muted-foreground mb-1">Services</div>
-                {Array.isArray(result?.company?.services) && result.company.services.length ? (
-                  <div className="flex flex-wrap gap-2">
-                    {result.company.services.map((s: string, i: number) => (
-                      <span key={i} className="rounded-full border px-2 py-0.5 text-xs">{s}</span>
-                    ))}
-                  </div>
-                ) : (
-                  <span className="text-sm text-muted-foreground">-</span>
-                )}
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-              <div>
-                <div className="text-sm text-muted-foreground mb-1">Contact Pages</div>
-                {Array.isArray(result?.company?.contactPages) && result.company.contactPages.length ? (
-                  <ul className="list-disc list-inside text-sm">
-                    {result.company.contactPages.map((u: string, i: number) => (
-                      <li key={i} className="break-all"><a className="underline underline-offset-2" href={u} target="_blank" rel="noreferrer">{u}</a></li>
-                    ))}
-                  </ul>
-                ) : (
-                  <span className="text-sm text-muted-foreground">-</span>
-                )}
-              </div>
-              <div>
-                <div className="text-sm text-muted-foreground mb-1">Pricing Pages</div>
-                {Array.isArray(result?.company?.pricingPages) && result.company.pricingPages.length ? (
-                  <ul className="list-disc list-inside text-sm">
-                    {result.company.pricingPages.map((u: string, i: number) => (
-                      <li key={i} className="break-all"><a className="underline underline-offset-2" href={u} target="_blank" rel="noreferrer">{u}</a></li>
-                    ))}
-                  </ul>
-                ) : (
-                  <span className="text-sm text-muted-foreground">-</span>
-                )}
-              </div>
-            </div>
-          </section>
-        )}
-
-        {/* Person Profile */}
-        {result?.classification?.type === "person" && (
-          <section className="rounded-lg border p-4 bg-card text-card-foreground">
-            <h2 className="text-lg font-semibold mb-3">Person Profile</h2>
+        <section className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur">
+          <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <div className="text-sm text-muted-foreground mb-1">Possible Titles</div>
-              {Array.isArray(result?.person?.titles) && result.person.titles.length ? (
-                <ul className="list-disc list-inside text-sm text-muted-foreground">
-                  {result.person.titles.map((t: string, i: number) => (
-                    <li key={i}>{t}</li>
-                  ))}
-                </ul>
-              ) : (
-                <span className="text-sm text-muted-foreground">-</span>
-              )}
+              <p className="text-xs uppercase tracking-[0.3em] text-slate-300">Executive summary</p>
+              <h2 className="mt-2 text-2xl font-semibold text-white">AI-written synopsis</h2>
             </div>
-          </section>
-        )}
-
-        {/* Executive Summary */}
-        <section className="rounded-lg border p-4 bg-card text-card-foreground">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-semibold">Executive Summary</h2>
-            <div className="flex items-center gap-2">
-              {!report && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={reportLoading || status !== "completed"}
-                  onClick={() => generateReport(false)}
-                >
-                  {reportLoading ? "Generating..." : "Generate Report"}
-                </Button>
-              )}
-              <Button asChild variant="outline" size="sm">
-                <a
-                  href={`/api/analyses/${id}/pdf`}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Download PDF
-                </a>
-              </Button>
-            </div>
+            {report && (
+              <div className="flex gap-3 text-sm text-slate-300">
+                <div className="rounded-full border border-white/20 px-3 py-1">Digital score: {report.digitalScore ?? "-"}</div>
+                <div className="rounded-full border border-white/20 px-3 py-1">Authority score: {report.authorityScore ?? "-"}</div>
+              </div>
+            )}
           </div>
-          {reportError && (
-            <div className="text-red-600 text-sm mb-2">{reportError}</div>
-          )}
           {report ? (
-            <div className="space-y-4">
-              <div>
-                <div className="text-sm text-muted-foreground mb-1">Overview</div>
-                <p className="text-sm leading-relaxed">{report.overview}</p>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <div className="font-medium">Strengths</div>
-                  <ul className="list-disc list-inside text-sm text-muted-foreground">
-                    {(report.strengths || []).map((s, i) => (
-                      <li key={i}>{s}</li>
-                    ))}
-                  </ul>
-                </div>
-                <div>
-                  <div className="font-medium">Weaknesses</div>
-                  <ul className="list-disc list-inside text-sm text-muted-foreground">
-                    {(report.weaknesses || []).map((s, i) => (
-                      <li key={i}>{s}</li>
-                    ))}
-                  </ul>
-                </div>
-                <div>
-                  <div className="font-medium">Opportunities</div>
-                  <ul className="list-disc list-inside text-sm text-muted-foreground">
-                    {(report.opportunities || []).map((s, i) => (
-                      <li key={i}>{s}</li>
-                    ))}
-                  </ul>
-                </div>
-                <div>
-                  <div className="font-medium">Threats</div>
-                  <ul className="list-disc list-inside text-sm text-muted-foreground">
-                    {(report.threats || []).map((s, i) => (
-                      <li key={i}>{s}</li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="rounded-md border p-3">
-                  <div className="text-sm text-muted-foreground">Digital Score</div>
-                  <div className="text-2xl font-semibold">{report.digitalScore ?? "-"}</div>
-                </div>
-                <div className="rounded-md border p-3">
-                  <div className="text-sm text-muted-foreground">Authority Score</div>
-                  <div className="text-2xl font-semibold">{report.authorityScore ?? "-"}</div>
-                </div>
-                <div className="rounded-md border p-3">
-                  <div className="text-sm text-muted-foreground">AI Recommendations</div>
-                  <div className="text-sm text-muted-foreground">
-                    {(report.recommendedAIProducts || []).slice(0, 3).join(", ") || "-"}
+            <div className="mt-6 space-y-6">
+              <p className="text-base text-slate-200">{report.overview || "No overview provided."}</p>
+              <div className="grid gap-4 md:grid-cols-2">
+                {[
+                  { title: "Strengths", items: report.strengths },
+                  { title: "Weaknesses", items: report.weaknesses },
+                  { title: "Opportunities", items: report.opportunities },
+                  { title: "Threats", items: report.threats },
+                ].map((block) => (
+                  <div key={block.title} className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                    <p className="text-sm uppercase tracking-[0.3em] text-slate-400">{block.title}</p>
+                    <ul className="mt-2 list-disc space-y-1 pl-4 text-sm text-slate-200">
+                      {block.items?.length ? block.items.map((item, idx) => <li key={idx}>{item}</li>) : <li>-</li>}
+                    </ul>
                   </div>
-                </div>
+                ))}
               </div>
-              <div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => generateReport(true)}
-                >
-                  Regenerate
-                </Button>
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <p className="text-sm uppercase tracking-[0.3em] text-slate-400">Recommended AI products</p>
+                {report.recommendedAIProducts?.length ? (
+                  <div className="mt-2 flex flex-wrap gap-2 text-sm text-slate-200">
+                    {report.recommendedAIProducts.map((rec, idx) => (
+                      <span key={idx} className="rounded-full border border-white/20 px-3 py-1">
+                        {rec}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mt-2 text-slate-400">-</p>
+                )}
               </div>
             </div>
           ) : (
-            <div className="text-sm text-muted-foreground">
+            <div className="mt-6 rounded-2xl border border-dashed border-white/20 bg-white/5 p-6 text-slate-300">
               {status !== "completed"
-                ? "Report will be available after processing completes."
-                : "Click Generate Report to create an executive summary."}
+                ? "Summary will be available once the analysis is completed."
+                : "Generate the executive summary to see GPT insights here."}
             </div>
           )}
         </section>
 
-        {/* Expanded Queries */}
-        <section className="rounded-lg border p-4 bg-card text-card-foreground">
-          <h2 className="text-lg font-semibold mb-3">Expanded Queries</h2>
-          {Array.isArray(result.expandedQueries) && result.expandedQueries.length ? (
-            <ul className="list-disc list-inside space-y-1 text-sm">
-              {result.expandedQueries.map((q: string, i: number) => (
-                <li key={i}>{q}</li>
+        <section className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur">
+          <p className="text-xs uppercase tracking-[0.3em] text-slate-300">Query expansion</p>
+          <h2 className="mt-2 text-2xl font-semibold text-white">Related search inventory</h2>
+          {expandedQueries.length ? (
+            <ul className="mt-4 list-disc space-y-1 pl-5 text-sm text-slate-200">
+              {expandedQueries.map((query, idx) => (
+                <li key={idx}>{query}</li>
               ))}
             </ul>
           ) : (
-            <div className="text-sm text-muted-foreground">-</div>
+            <p className="mt-4 text-sm text-slate-400">No expanded queries captured.</p>
           )}
         </section>
 
-        {/* Top Results */}
-        <section className="rounded-lg border p-4 bg-card text-card-foreground">
-          <h2 className="text-lg font-semibold mb-3">Top Results</h2>
-          {Array.isArray(result.samples) && result.samples.length ? (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-muted/40">
-                  <tr className="text-left">
+        <section className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur">
+          <p className="text-xs uppercase tracking-[0.3em] text-slate-300">Top web results</p>
+          <h2 className="mt-2 text-2xl font-semibold text-white">Source mapping</h2>
+          {samples.length ? (
+            <div className="mt-4 overflow-x-auto">
+              <table className="w-full text-sm text-slate-200">
+                <thead className="bg-white/5 text-left text-slate-400">
+                  <tr>
                     <th className="px-3 py-2">Title</th>
                     <th className="px-3 py-2">URL</th>
                     <th className="px-3 py-2">Description</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {result.samples.map((r: any, i: number) => (
-                    <tr key={i} className="border-t align-top">
-                      <td className="px-3 py-2 min-w-[12rem]">{r.title || "-"}</td>
-                      <td className="px-3 py-2 min-w-[16rem] break-all">
-                        {r.url ? (
-                          <a href={r.url} target="_blank" rel="noreferrer" className="underline underline-offset-2">{r.url}</a>
+                  {samples.map((sample: any, idx: number) => (
+                    <tr key={idx} className="border-t border-white/10 align-top">
+                      <td className="px-3 py-2 font-semibold">{sample.title || "-"}</td>
+                      <td className="px-3 py-2 break-all text-sky-200">
+                        {sample.url ? (
+                          <a href={sample.url} target="_blank" rel="noreferrer" className="underline underline-offset-2">
+                            {sample.url}
+                          </a>
                         ) : (
-                          <span className="text-muted-foreground">-</span>
+                          "-"
                         )}
                       </td>
-                      <td className="px-3 py-2 text-muted-foreground max-w-[40rem]">{r.description || "-"}</td>
+                      <td className="px-3 py-2 text-slate-400">{sample.description || "-"}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
           ) : (
-            <div className="text-sm text-muted-foreground">-</div>
+            <p className="mt-4 text-sm text-slate-400">No search samples recorded.</p>
           )}
         </section>
 
-        {/* Raw JSON */}
-        <section className="rounded-lg border p-4 bg-card text-card-foreground">
+        <section className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur">
           <details>
-            <summary className="cursor-pointer text-lg font-semibold">Raw JSON</summary>
-            {error && <div className="text-red-600 text-sm mt-2">{error}</div>}
-            {loading && !data ? (
-              <div className="text-sm mt-2">Loading...</div>
-            ) : (
-              <pre className="text-xs whitespace-pre-wrap break-words bg-muted/30 p-3 rounded-md border mt-3">
-                {JSON.stringify(result, null, 2)}
-              </pre>
-            )}
+            <summary className="cursor-pointer text-xs uppercase tracking-[0.3em] text-slate-300">
+              Raw JSON
+            </summary>
+            <pre className="mt-4 max-h-[32rem] overflow-auto rounded-2xl border border-white/10 bg-black/40 p-4 text-xs text-slate-200">
+              {JSON.stringify(result, null, 2)}
+            </pre>
           </details>
         </section>
 
-        <div className="flex justify-between text-sm">
-          <Link href="/" className="underline underline-offset-2 text-muted-foreground hover:text-foreground">New analysis</Link>
-          <Link href="/analyses" className="underline underline-offset-2 text-muted-foreground hover:text-foreground">All analyses</Link>
+        <div className="flex flex-wrap justify-between text-sm text-slate-400">
+          <Link href="/" className="underline-offset-2 hover:text-white">
+            New analysis
+          </Link>
+          <Link href="/analyses" className="underline-offset-2 hover:text-white">
+            All analyses
+          </Link>
         </div>
       </div>
     </main>
