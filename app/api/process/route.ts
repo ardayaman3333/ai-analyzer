@@ -10,6 +10,13 @@ type BraveWebResult = {
   description?: string;
 };
 
+const EMAIL_REGEX = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi;
+const PHONE_REGEX = /\+?[0-9][0-9\s().-]{6,}/g;
+const LOCATION_HINTS = [
+  "new york", "san francisco", "london", "berlin", "paris", "istanbul", "ankara", "izmir",
+  "toronto", "sydney", "singapore", "dubai", "tokyo", "seoul", "madrid", "rome", "amsterdam",
+];
+
 async function expandQueriesWithOpenAI(query: string): Promise<string[]> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
@@ -108,13 +115,6 @@ function extractInsights(results: BraveWebResult[]) {
     if (!socials[k].includes(v)) socials[k].push(v);
   };
 
-  const emailRegex = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi;
-  const phoneRegex = /\+?[0-9][0-9\s().-]{6,}/g;
-  const locationHints = [
-    "new york", "san francisco", "london", "berlin", "paris", "istanbul", "ankara", "izmir",
-    "toronto", "sydney", "singapore", "dubai", "tokyo", "seoul", "madrid", "rome", "amsterdam",
-  ];
-
   for (const r of results) {
     if (!r.url) continue;
     try {
@@ -143,10 +143,10 @@ function extractInsights(results: BraveWebResult[]) {
       }
 
       const haystack = `${r.title || ""} ${r.description || ""}`;
-      const emailMatches = haystack.match(emailRegex);
+      const emailMatches = haystack.match(EMAIL_REGEX);
       if (emailMatches) emailMatches.forEach((e) => emails.add(e.toLowerCase()));
 
-      const phoneMatches = haystack.match(phoneRegex);
+      const phoneMatches = haystack.match(PHONE_REGEX);
       if (phoneMatches) {
         phoneMatches.forEach((p) => {
           const cleaned = p.trim();
@@ -155,7 +155,7 @@ function extractInsights(results: BraveWebResult[]) {
       }
 
       const haystackLower = haystack.toLowerCase();
-      for (const hint of locationHints) {
+      for (const hint of LOCATION_HINTS) {
         if (haystackLower.includes(hint)) {
           locations.add(hint.replace(/\b\w/g, (c) => c.toUpperCase()));
         }
@@ -198,6 +198,59 @@ function classifyEntity(query: string, results: BraveWebResult[], socials: Recor
   if (hasLinkedInPerson || personLikely) return { type: "person", confidence: 0.6 } as const;
   if (Object.keys(socials).length >= 3) return { type: "company", confidence: 0.55 } as const;
   return { type: "unknown", confidence: 0.4 } as const;
+}
+
+async function fetchWithTimeout(url: string, timeoutMs = 5000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { cache: "no-store", signal: controller.signal });
+    if (!res.ok) return null;
+    return await res.text();
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function enrichInsightsWithDomain(insights: ReturnType<typeof extractInsights>) {
+  if (!insights.primaryDomain) return insights;
+
+  const baseDomain = insights.primaryDomain.replace(/^https?:\/\//, "");
+  const emails = new Set(insights.emails);
+  const phones = new Set(insights.phones);
+  const locations = new Set(insights.locations);
+  const contactPages = new Set(insights.contactPages);
+  const pricingPages = new Set(insights.pricingPages);
+
+  const snapshot = await fetchWithTimeout(`https://r.jina.ai/https://${baseDomain}`);
+  if (snapshot) {
+    const lower = snapshot.toLowerCase();
+    const emailMatches = snapshot.match(EMAIL_REGEX);
+    emailMatches?.forEach((m) => emails.add(m.toLowerCase()));
+    const phoneMatches = snapshot.match(PHONE_REGEX);
+    phoneMatches?.forEach((m) => phones.add(m.trim()));
+    for (const hint of LOCATION_HINTS) {
+      if (lower.includes(hint)) {
+        locations.add(hint.replace(/\b\w/g, (c) => c.toUpperCase()));
+      }
+    }
+  }
+
+  const contactGuesses = ["contact", "contact-us", "support"];
+  const pricingGuesses = ["pricing", "plans", "solutions/pricing"];
+  contactGuesses.forEach((slug) => contactPages.add(`https://${baseDomain}/${slug}`));
+  pricingGuesses.forEach((slug) => pricingPages.add(`https://${baseDomain}/${slug}`));
+
+  return {
+    ...insights,
+    emails: Array.from(emails),
+    phones: Array.from(phones),
+    locations: Array.from(locations),
+    contactPages: Array.from(contactPages),
+    pricingPages: Array.from(pricingPages),
+  };
 }
 
 function inferCompanyFields(insights: ReturnType<typeof extractInsights>, results: BraveWebResult[]) {
@@ -284,7 +337,8 @@ export async function POST(request: NextRequest) {
     }
 
     const flat = Object.values(allResults).flat();
-    const insights = extractInsights(flat);
+    const rawInsights = extractInsights(flat);
+    const insights = await enrichInsightsWithDomain(rawInsights);
     const classification = classifyEntity(query, flat, insights.socials);
     const company = classification.type === "company" ? inferCompanyFields(insights, flat) : undefined;
     const person = classification.type === "person" ? inferPersonFields(flat) : undefined;

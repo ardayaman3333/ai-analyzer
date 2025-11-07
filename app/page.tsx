@@ -97,7 +97,7 @@ export default function Home() {
               </span>
             </h1>
             <p className="mt-6 max-w-2xl text-lg text-slate-300">
-              Crawl public web data for brands, companies or people using Firecrawl, Brave Search and
+              Crawl public web data for brands, companies or people using Brave Search and
               OpenAI chains to craft decision-ready intelligence.
             </p>
 
