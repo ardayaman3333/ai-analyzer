@@ -293,13 +293,13 @@ export async function GET(
       />
     ).toBuffer();
 
-    const buffer = rawBuffer as unknown as Uint8Array;
-    const arrayBuffer = buffer.buffer.slice(
-      buffer.byteOffset,
-      buffer.byteOffset + buffer.byteLength
-    ) as ArrayBuffer;
+    const raw = rawBuffer as unknown;
+    const nodeBuffer =
+      typeof Buffer !== "undefined" && Buffer.isBuffer(raw)
+        ? (raw as Buffer)
+        : Buffer.from(raw as Uint8Array);
 
-    const response = new NextResponse(arrayBuffer, {
+    const response = new NextResponse(nodeBuffer as unknown as BodyInit, {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
