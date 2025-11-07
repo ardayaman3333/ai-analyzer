@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { headers } from "next/headers";
+import { FilterControls } from "@/components/analyses/FilterControls";
+import { DeleteButton } from "@/components/analyses/DeleteButton";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -26,22 +28,6 @@ async function fetchAnalyses() {
   const res = await fetch(`${base}/api/analyses?limit=50`, { cache: "no-store" });
   if (!res.ok) return [] as any[];
   return res.json();
-}
-
-const statusFilters = [
-  { label: "All", value: "all" },
-  { label: "Active", value: "active" },
-  { label: "Completed", value: "completed" },
-  { label: "Failed", value: "failed" },
-];
-
-function buildQuery(params: Record<string, string | undefined>) {
-  const query = new URLSearchParams();
-  Object.entries(params).forEach(([key, value]) => {
-    if (value && value !== "all") query.set(key, value);
-  });
-  const str = query.toString();
-  return str ? `?${str}` : "";
 }
 
 export default async function AnalysesPage({ searchParams }: { searchParams: SearchParams }) {
@@ -110,40 +96,7 @@ export default async function AnalysesPage({ searchParams }: { searchParams: Sea
               + New analysis
             </Link>
           </div>
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex flex-wrap gap-2 text-xs font-semibold text-slate-300">
-              {statusFilters.map((filter) => {
-                const href = `/analyses${buildQuery({
-                  status: filter.value,
-                  sort: sortOrder === "asc" ? "asc" : undefined,
-                })}`;
-                const isActive = filter.value === filterValue;
-                return (
-                  <Link
-                    key={filter.value}
-                    href={href}
-                    className={`rounded-full border px-3 py-1 transition ${
-                      isActive ? "border-white text-white" : "border-white/20 text-slate-400 hover:border-white/40"
-                    }`}
-                  >
-                    {filter.label}
-                  </Link>
-                );
-              })}
-            </div>
-            <div className="text-xs text-slate-300">
-              <span className="mr-2 uppercase tracking-[0.3em]">Sort</span>
-              <Link
-                href={`/analyses${buildQuery({
-                  status: filterValue,
-                  sort: sortOrder === "asc" ? "desc" : "asc",
-                })}`}
-                className="rounded-full border border-white/20 px-3 py-1 transition hover:border-white/40"
-              >
-                {sortOrder === "asc" ? "Oldest → Newest" : "Newest → Oldest"}
-              </Link>
-            </div>
-          </div>
+          <FilterControls currentFilter={filterValue} sortOrder={sortOrder} />
         </header>
 
         <section className="grid gap-4 md:grid-cols-3">
@@ -200,12 +153,15 @@ export default async function AnalysesPage({ searchParams }: { searchParams: Sea
                 </div>
                 <div className="mt-5 flex items-center justify-between text-sm">
                   <div className="text-slate-400">ID: {it.id}</div>
-                  <Link
-                    href={`/analysis/${it.id}`}
-                    className="rounded-full border border-white/20 px-4 py-2 text-slate-100 transition hover:border-white hover:text-white"
-                  >
-                    View details
-                  </Link>
+                  <div className="flex items-center gap-2">
+                    <Link
+                      href={`/analysis/${it.id}`}
+                      className="rounded-full border border-white/20 px-4 py-2 text-slate-100 transition hover:border-white hover:text-white"
+                    >
+                      View
+                    </Link>
+                    <DeleteButton id={it.id} />
+                  </div>
                 </div>
               </div>
             ))}

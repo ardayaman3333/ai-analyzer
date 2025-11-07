@@ -12,26 +12,25 @@ type AnalysisRow = {
 
 type RouteContext = { params: Promise<{ id: string }> };
 
-export async function GET(
-  request: NextRequest,
-  { params }: RouteContext
-) {
-  let id: string | undefined;
-
+async function resolveId(request: NextRequest, params: RouteContext["params"]) {
   try {
     const resolved = await params;
-    id = resolved?.id;
+    if (resolved?.id) return resolved.id;
   } catch {
-    id = undefined;
+    // fall-through
   }
 
-  if (!id) {
-    try {
-      const url = new URL(request.url);
-      const parts = url.pathname.split("/").filter(Boolean);
-      id = parts[parts.length - 1] || parts[parts.length - 2];
-    } catch {}
+  try {
+    const url = new URL(request.url);
+    const parts = url.pathname.split("/").filter(Boolean);
+    return parts[parts.length - 1] || parts[parts.length - 2];
+  } catch {
+    return undefined;
   }
+}
+
+export async function GET(request: NextRequest, ctx: RouteContext) {
+  const id = await resolveId(request, ctx.params);
 
   if (!id) {
     return NextResponse.json({ error: "Missing id" }, { status: 400 });
@@ -65,6 +64,25 @@ export async function GET(
     );
   } catch (err) {
     console.error("GET /api/analyses/[id] error", err);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: NextRequest, ctx: RouteContext) {
+  const id = await resolveId(request, ctx.params);
+
+  if (!id) {
+    return NextResponse.json({ error: "Missing id" }, { status: 400 });
+  }
+
+  try {
+    const result = await sql`DELETE FROM analyses WHERE id::text = ${id} RETURNING id;`;
+    if (result.rowCount === 0) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+    return NextResponse.json({ ok: true }, { status: 200 });
+  } catch (err) {
+    console.error("DELETE /api/analyses/[id] error", err);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
