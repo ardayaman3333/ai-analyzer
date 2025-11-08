@@ -107,123 +107,80 @@ body {
   overflow: hidden;
 }
 
-.shooting-star {
+.comet-star {
   position: absolute;
-  width: 3px;
+  top: 0;
+  left: 0;
+  width: 220px;
   height: 3px;
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0));
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.85) 30%, rgba(124, 187, 255, 0.9) 60%, rgba(255, 255, 255, 0));
   border-radius: 999px;
-  animation: shooting 6s linear infinite;
-  opacity: 0.7;
+  box-shadow: 0 0 30px rgba(120, 195, 255, 0.55);
+  opacity: 0;
+  transform-origin: left center;
+  animation: comet var(--comet-duration, 3.4s) ease-in-out infinite;
+  animation-delay: var(--comet-delay, 0s);
 }
 
-.shooting-star::before {
+.comet-star::after {
   content: "";
   position: absolute;
-  width: 12px;
-  height: 12px;
-  top: -4px;
-  left: -4px;
-  border-radius: 999px;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0));
-  opacity: 0;
-  transform-origin: center;
-  animation: twinkle 2.4s ease-in-out infinite;
-  animation-delay: var(--twinkle-delay, 0s);
-  filter: drop-shadow(0 0 10px rgba(125, 177, 255, 0.6));
+  right: -6px;
+  top: -5px;
+  width: 18px;
+  height: 18px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.95), rgba(204, 228, 255, 0.2));
+  border-radius: 50%;
+  filter: drop-shadow(0 0 16px rgba(160, 208, 255, 0.9));
 }
 
-.shooting-star:nth-child(2) {
-  animation-delay: 2s;
-  top: 30%;
-  left: 10%;
-}
-
-.shooting-star:nth-child(3) {
-  animation-delay: 4s;
-  top: 60%;
-  left: 70%;
-}
-
-.shooting-star:nth-child(4) {
-  animation-delay: 1s;
-  top: 10%;
-  left: 40%;
-}
-
-.shooting-star:nth-child(5) {
-  animation-delay: 5s;
-  top: 80%;
-  left: 20%;
-}
-
-.shooting-star:nth-child(6) {
-  animation-delay: 3s;
-  top: 50%;
-  left: 85%;
-}
-
-.shooting-star:nth-child(7) {
-  animation-delay: 6s;
-  top: 25%;
-  left: 60%;
-}
-
-.shooting-star:nth-child(8) {
-  animation-delay: 0s;
-  top: 70%;
-  left: 5%;
-}
-
-.shooting-star:nth-child(9) {
-  animation-delay: 7s;
-  top: 15%;
-  left: 80%;
-}
-
-.shooting-star:nth-child(10) {
-  animation-delay: 8s;
-  top: 45%;
-  left: 30%;
-}
-
-.shooting-star:nth-child(11) {
-  animation-delay: 10s;
-  top: 5%;
-  left: 15%;
-}
-
-@keyframes shooting {
+@keyframes comet {
   0% {
-    transform: translate3d(0, 0, 0) rotate(45deg) scaleX(0);
     opacity: 0;
+    transform: translate3d(var(--comet-x-start, -25vw), var(--comet-y-start, 0vh), 0) rotate(var(--comet-tilt, 0deg)) scaleX(0.5);
   }
-  10% {
+  15% {
     opacity: 1;
   }
-  80% {
-    transform: translate3d(200px, -200px, 0) rotate(45deg) scaleX(1.5);
-    opacity: 0.8;
+  85% {
+    opacity: 1;
   }
   100% {
-    transform: translate3d(400px, -400px, 0) rotate(45deg) scaleX(0);
     opacity: 0;
+    transform: translate3d(var(--comet-x-end, 125vw), var(--comet-y-end, -10vh), 0) rotate(var(--comet-tilt, 0deg)) scaleX(1);
   }
 }
 
-@keyframes twinkle {
+.nexus-glow {
+  display: inline-block;
+  background: linear-gradient(120deg, rgba(255, 255, 255, 0.95), rgba(164, 202, 255, 0.95), rgba(255, 255, 255, 0.85));
+  background-size: 220% 220%;
+  color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: aurora 6s ease-in-out infinite, neonPulse 5s ease-in-out infinite;
+  filter: drop-shadow(0 0 25px rgba(120, 168, 255, 0.6));
+}
+
+@keyframes aurora {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes neonPulse {
   0%,
   100% {
-    opacity: 0;
-    transform: scale(0.4);
+    filter: drop-shadow(0 0 12px rgba(120, 168, 255, 0.6));
   }
-  40% {
-    opacity: 1;
-    transform: scale(1.1);
-  }
-  60% {
-    opacity: 0.6;
-    transform: scale(0.9);
+  50% {
+    filter: drop-shadow(0 0 24px rgba(120, 168, 255, 0.9));
   }
 }
 }

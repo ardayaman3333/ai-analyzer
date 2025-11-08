@@ -30,6 +30,30 @@ const highlightCards: HighlightCard[] = [
   },
 ];
 
+const cometConfigs = [
+  {
+    startY: "5vh",
+    endY: "-10vh",
+    delay: "0s",
+    duration: "3.2s",
+    rotate: "8deg",
+  },
+  {
+    startY: "45vh",
+    endY: "10vh",
+    delay: "1.6s",
+    duration: "3.6s",
+    rotate: "3deg",
+  },
+  {
+    startY: "78vh",
+    endY: "60vh",
+    delay: "3.1s",
+    duration: "3s",
+    rotate: "-4deg",
+  },
+] as const;
+
 export default function Home() {
   const router = useRouter();
   const [query, setQuery] = useState("");
@@ -82,26 +106,23 @@ export default function Home() {
     <main className="relative min-h-screen overflow-hidden bg-slate-950 text-white">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(56,189,248,0.15),_transparent_55%),radial-gradient(circle_at_20%_20%,_rgba(129,140,248,0.2),_transparent_45%),radial-gradient(circle_at_80%_0%,_rgba(248,113,113,0.15),_transparent_50%)]" />
       <div className="star-field pointer-events-none" aria-hidden="true">
-        {Array.from({ length: 18 }).map((_, idx) => {
-          const top = `${Math.random() * 100}%`;
-          const left = `${Math.random() * 100}%`;
-          const streakDelay = `${Math.random() * 12}s`;
-          const sparkleDelay = `${Math.random() * 4}s`;
-          return (
-            <div
-              key={idx}
-              className="shooting-star"
-              style={
-                {
-                  top,
-                  left,
-                  animationDelay: streakDelay,
-                  "--twinkle-delay": sparkleDelay,
-                } as CSSProperties
-              }
-            />
-          );
-        })}
+        {cometConfigs.map((config, idx) => (
+          <div
+            key={idx}
+            className="comet-star"
+            style={
+              {
+                "--comet-x-start": "-25vw",
+                "--comet-y-start": config.startY,
+                "--comet-x-end": "125vw",
+                "--comet-y-end": config.endY,
+                "--comet-delay": config.delay,
+                "--comet-duration": config.duration,
+                "--comet-tilt": config.rotate,
+              } as CSSProperties
+            }
+          />
+        ))}
       </div>
 
       <div className="relative z-10 mx-auto flex max-w-6xl flex-col gap-16 px-6 py-16 lg:py-24">
@@ -111,7 +132,7 @@ export default function Home() {
               Realtime brand intelligence
             </span>
             <h1 className="mt-6 text-6xl font-semibold leading-tight tracking-tight text-white sm:text-7xl">
-              <span className="block bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.9),_rgba(146,179,255,0.3))] bg-clip-text text-transparent drop-shadow-[0_0_25px_rgba(91,124,255,0.45)]">
+              <span className="nexus-glow">
                 NexusAI
               </span>
               <span className="mt-2 block text-slate-200">
