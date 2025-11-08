@@ -63,7 +63,7 @@ const styles = StyleSheet.create({
   },
 });
 
-const bullet = "•";
+const bullet = "\u2022";
 
 const toArray = (value: any): string[] =>
   Array.isArray(value) ? value.map((v) => String(v)) : [];
@@ -150,10 +150,10 @@ function AnalysisReportDocument({
           </Text>
           <Text style={styles.text}>Aliases:</Text>
           <BulletList items={aliases} />
-          <Text style={styles.text}>Emails:</Text>
-          <BulletList items={emails} />
-          <Text style={styles.text}>Phones:</Text>
-          <BulletList items={phones} />
+            <Text style={styles.text}>Emails:</Text>
+            <BulletList items={emails} />
+            <Text style={styles.text}>Phones:</Text>
+            <BulletList items={phones} empty="No phone numbers detected." />
           <Text style={styles.text}>Locations:</Text>
           <BulletList items={locations} />
           <Text style={styles.text}>Contact Pages:</Text>
