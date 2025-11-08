@@ -136,6 +136,8 @@ function extractInsights(results: BraveWebResult[]) {
   const phones = new Set<string>();
   const locations = new Set<string>();
   const domainCounts: Record<string, number> = {};
+  const phoneSources: { phone: string; source: string }[] = [];
+  const phoneSourceSet = new Set<string>();
 
   const addSocial = (k: string, v: string) => {
     socials[k] = socials[k] || [];
@@ -175,9 +177,22 @@ function extractInsights(results: BraveWebResult[]) {
 
       const phoneMatches = haystack.match(PHONE_REGEX);
       if (phoneMatches) {
-        phoneMatches.forEach((p) => {
-          const cleaned = p.trim();
-          if (cleaned.length >= 7) phones.add(cleaned);
+        phoneMatches.forEach((match) => {
+          const cleaned = match
+            .replace(/[^0-9+()\-\s]/g, "")
+            .replace(/\s+/g, " ")
+            .trim();
+          const digitCount = cleaned.replace(/[^\d]/g, "").length;
+          if (digitCount >= 7 && digitCount <= 16) {
+            phones.add(cleaned);
+            if (domain) {
+              const key = `${cleaned}|${domain}`;
+              if (!phoneSourceSet.has(key)) {
+                phoneSources.push({ phone: cleaned, source: domain });
+                phoneSourceSet.add(key);
+              }
+            }
+          }
         });
       }
 
@@ -204,6 +219,7 @@ function extractInsights(results: BraveWebResult[]) {
     emails: Array.from(emails),
     phones: Array.from(phones),
     locations: Array.from(locations),
+    phoneSources,
     domainHighlights,
   };
 }

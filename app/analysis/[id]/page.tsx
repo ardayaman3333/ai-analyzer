@@ -33,6 +33,11 @@ type TraceEntry = {
   };
 };
 
+type PhoneSource = {
+  phone: string;
+  source?: string;
+};
+
 export default function AnalysisDetailPage() {
   const params = useParams<{ id: string }>();
   const id = params.id;
@@ -81,6 +86,7 @@ export default function AnalysisDetailPage() {
       locations: (result?.insights?.locations as string[]) || [],
       domainHighlights:
         (result?.insights?.domainHighlights as Array<{ domain: string; count: number }>) || [],
+      phoneSources: (result?.insights?.phoneSources as PhoneSource[]) || [],
     }),
     [result]
   );
@@ -123,6 +129,23 @@ export default function AnalysisDetailPage() {
   const company = result?.company;
   const person = result?.person;
   const trace = Array.isArray(result?.trace) ? (result.trace as TraceEntry[]) : [];
+  const sanitizePhoneList = (phoneList: string[]) =>
+    Array.from(
+      new Set(
+        phoneList
+          .map((raw) =>
+            raw
+              .replace(/[^0-9+()\-\s]/g, "")
+              .replace(/\s+/g, " ")
+              .trim()
+          )
+          .filter((cleaned) => {
+            const digits = cleaned.replace(/[^\d]/g, "").length;
+            return digits >= 7 && digits <= 16;
+          })
+      )
+    ).slice(0, 8);
+  const phoneSources = insights.phoneSources;
 
   const statusBadge =
     status === "completed"
@@ -242,7 +265,6 @@ export default function AnalysisDetailPage() {
           <div className="mt-5 grid gap-4 md:grid-cols-3">
             {[
               { label: "Emails", values: insights.emails },
-              { label: "Phones", values: insights.phones },
               { label: "Locations", values: insights.locations },
             ].map((block) => (
               <div key={block.label} className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-slate-200">
@@ -259,13 +281,36 @@ export default function AnalysisDetailPage() {
                   <p className="mt-2 text-slate-400">
                     {block.label === "Emails"
                       ? "No public email addresses discovered."
-                      : block.label === "Phones"
-                      ? "No phone numbers available yet."
                       : "No geographic hints surfaced so far."}
                   </p>
                 )}
               </div>
             ))}
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-slate-200">
+              <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Phones</p>
+              {phoneSources.length ? (
+                <ul className="mt-2 space-y-1">
+                  {phoneSources.slice(0, 6).map((entry: PhoneSource, idx) => (
+                    <li key={`${entry.phone}-${idx}`} className="break-all text-white/90">
+                      {entry.phone}
+                      {entry.source ? (
+                        <span className="text-slate-400"> ({entry.source})</span>
+                      ) : null}
+                    </li>
+                  ))}
+                </ul>
+              ) : sanitizePhoneList(insights.phones).length ? (
+                <ul className="mt-2 space-y-1">
+                  {sanitizePhoneList(insights.phones).map((value, index) => (
+                    <li key={`fallback-${index}`} className="break-all text-white/90">
+                      {value}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-2 text-slate-400">No phone numbers available yet.</p>
+              )}
+            </div>
           </div>
           <div className="mt-5 grid gap-4 md:grid-cols-2">
             {[

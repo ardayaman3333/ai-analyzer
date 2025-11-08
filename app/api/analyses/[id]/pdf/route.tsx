@@ -68,6 +68,22 @@ const bullet = "\u2022";
 const toArray = (value: any): string[] =>
   Array.isArray(value) ? value.map((v) => String(v)) : [];
 
+const sanitizePhones = (phones: string[]) => {
+  const normalized = new Set<string>();
+  phones.forEach((raw) => {
+    if (!raw) return;
+    const matches = raw.match(/\+?[0-9][0-9()\s./-]{5,}/g);
+    if (!matches) return;
+    matches.forEach((match) => {
+      const compact = match.replace(/\s+/g, " ").trim();
+      if (compact.length >= 7 && compact.length <= 32) {
+        normalized.add(compact);
+      }
+    });
+  });
+  return Array.from(normalized).slice(0, 8);
+};
+
 function BulletList({ items, empty = "-" }: { items?: string[]; empty?: string }) {
   if (!items || items.length === 0) {
     return <Text style={styles.text}>{empty}</Text>;
@@ -117,7 +133,22 @@ function AnalysisReportDocument({
 
   const aliases = toArray(insights?.aliases);
   const emails = toArray(insights?.emails);
-  const phones = toArray(insights?.phones);
+  const phoneSources = Array.isArray(insights?.phoneSources)
+    ? insights.phoneSources
+        .map((entry: any) => ({
+          phone: String(entry.phone || "").trim(),
+          source: String(entry.source || "")
+            .replace(/^https?:\/\//, "")
+            .replace(/\/.*/, ""),
+        }))
+        .filter((entry: any) => entry.phone)
+    : [];
+
+  const phones = phoneSources.length
+    ? phoneSources.map((entry: { phone: string; source?: string }) =>
+        entry.source ? `${entry.phone} (${entry.source})` : entry.phone
+      )
+    : sanitizePhones(toArray(insights?.phones));
   const locations = toArray(insights?.locations);
   const contactPages = toArray(insights?.contactPages);
   const pricingPages = toArray(insights?.pricingPages);
