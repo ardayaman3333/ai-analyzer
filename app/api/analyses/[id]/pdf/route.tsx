@@ -1,6 +1,7 @@
 import React from "react";
 import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@vercel/postgres";
+import { cookies } from "next/headers";
 import { Document, Page, StyleSheet, Text, View, renderToStream } from "@react-pdf/renderer";
 
 export const runtime = "nodejs";
@@ -13,6 +14,7 @@ type AnalysisRow = {
   result: any | null;
   created_at: string | null;
   updated_at: string | null;
+  session_id: string | null;
 };
 
 const styles = StyleSheet.create({
@@ -250,9 +252,15 @@ export async function GET(
     return NextResponse.json({ error: "Missing id" }, { status: 400 });
   }
 
+  const cookieStore = await cookies();
+  const sessionId = cookieStore.get("nexus_session")?.value;
+  if (!sessionId) {
+    return NextResponse.json({ error: "Missing session" }, { status: 401 });
+  }
+
   try {
     const { rows } = await sql<AnalysisRow>`
-      SELECT id, query, status, result, created_at, updated_at
+      SELECT id, query, status, result, created_at, updated_at, session_id
       FROM analyses
       WHERE id::text = ${id}
       LIMIT 1;
@@ -263,6 +271,9 @@ export async function GET(
     }
 
     const row = rows[0];
+    if (row.session_id !== sessionId) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
 
     let parsedResult: Record<string, any> = {};
     if (typeof row.result === "string") {

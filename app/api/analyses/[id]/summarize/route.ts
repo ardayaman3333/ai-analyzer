@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@vercel/postgres";
+import { cookies } from "next/headers";
 
 type Report = {
   overview: string;
@@ -194,15 +195,24 @@ export async function POST(
   }
   if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
 
+  const cookieStore = await cookies();
+  const sessionId = cookieStore.get("nexus_session")?.value;
+  if (!sessionId) {
+    return NextResponse.json({ error: "Missing session" }, { status: 401 });
+  }
+
   try {
     const { rows } = await sql`
-      SELECT id, query, status, result
+      SELECT id, query, status, result, session_id
       FROM analyses
       WHERE id::text = ${id}
       LIMIT 1;
     `;
     if (rows.length === 0) return NextResponse.json({ error: "Not found" }, { status: 404 });
     const row = rows[0] as any;
+    if (row.session_id !== sessionId) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
     const result = row.result || {};
 
     // If already present and not forced, return cached

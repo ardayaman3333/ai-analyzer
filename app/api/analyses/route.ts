@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@vercel/postgres";
+import { cookies } from "next/headers";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const limit = Math.min(parseInt(searchParams.get("limit") || "20", 10) || 20, 100);
   const offset = parseInt(searchParams.get("offset") || "0", 10) || 0;
+
+  const cookieStore = await cookies();
+  const sessionId = cookieStore.get("nexus_session")?.value;
+  if (!sessionId) {
+    return NextResponse.json({ error: "Missing session" }, { status: 401 });
+  }
 
   try {
     const { rows } = await sql`
@@ -17,6 +24,7 @@ export async function GET(req: NextRequest) {
         result -> 'classification' ->> 'type' AS classification_type,
         result -> 'report' AS report_payload
       FROM analyses
+      WHERE session_id = ${sessionId}
       ORDER BY created_at DESC
       LIMIT ${limit} OFFSET ${offset};
     `;
