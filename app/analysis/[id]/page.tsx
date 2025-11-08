@@ -419,11 +419,16 @@ export default function AnalysisDetailPage() {
         </section>
 
         <section className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <p className="text-xs uppercase tracking-[0.3em] text-slate-300">Executive summary</p>
-              <h2 className="mt-2 text-2xl font-semibold text-white">AI-written synopsis</h2>
-            </div>
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <p className="text-xs uppercase tracking-[0.3em] text-slate-300">Executive summary</p>
+                <h2 className="mt-2 text-2xl font-semibold text-white">AI-written synopsis</h2>
+                {report && (
+                  <p className="mt-2 text-sm text-slate-400">
+                    Generated with OpenAI (gpt-4o-mini) from the signals below. Scores reflect signal richness.
+                  </p>
+                )}
+              </div>
             {report && (
               <div className="flex gap-3 text-sm text-slate-300">
                 <div className="rounded-full border border-white/20 px-3 py-1">Digital score: {report.digitalScore ?? "-"}</div>
@@ -434,6 +439,13 @@ export default function AnalysisDetailPage() {
           {report ? (
             <div className="mt-6 space-y-6">
               <p className="text-base text-slate-200">{report.overview || "No overview provided."}</p>
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-slate-300">
+                <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Why this summary?</p>
+                <p className="mt-2">
+                  Highlights are derived from web signals (aliases, socials, contact/pricing pages) plus Brave search context.
+                  Re-run the summary if you gather new data—scores will adapt to the fresh signal quality.
+                </p>
+              </div>
               <div className="grid gap-4 md:grid-cols-2">
                 {[
                   { title: "Strengths", items: report.strengths },
