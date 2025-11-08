@@ -10,6 +10,7 @@ type BraveWebResult = {
   description?: string;
 };
 
+
 const EMAIL_REGEX = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi;
 const PHONE_REGEX = /\+?[0-9][0-9\s().-]{6,}/g;
 const LOCATION_HINTS = [
@@ -253,6 +254,55 @@ async function enrichInsightsWithDomain(insights: ReturnType<typeof extractInsig
   };
 }
 
+function summarizeQuerySignals(results: BraveWebResult[]) {
+  const emails = new Set<string>();
+  const phones = new Set<string>();
+  const locations = new Set<string>();
+  const contactPages = new Set<string>();
+  const pricingPages = new Set<string>();
+  const domains = new Set<string>();
+
+  for (const r of results) {
+    if (r.url) {
+      try {
+        const u = new URL(r.url);
+        domains.add(u.hostname.replace(/^www\./, ""));
+        const path = (u.pathname || "").toLowerCase();
+        if (path.includes("contact") || path.includes("iletisim") || path.includes("about")) {
+          contactPages.add(r.url);
+        }
+        if (path.includes("pricing") || path.includes("price") || path.includes("plans") || path.includes("fiyat")) {
+          pricingPages.add(r.url);
+        }
+      } catch {}
+    }
+    const haystack = `${r.title || ""} ${r.description || ""}`;
+    const emailMatches = haystack.match(EMAIL_REGEX);
+    emailMatches?.forEach((m) => emails.add(m.toLowerCase()));
+    const phoneMatches = haystack.match(PHONE_REGEX);
+    phoneMatches?.forEach((m) => {
+      const cleaned = m.trim();
+      if (cleaned.length >= 7) phones.add(cleaned);
+    });
+    const lower = haystack.toLowerCase();
+    for (const hint of LOCATION_HINTS) {
+      if (lower.includes(hint)) {
+        locations.add(hint.replace(/\b\w/g, (c) => c.toUpperCase()));
+      }
+    }
+  }
+
+  return {
+    domains: Array.from(domains).slice(0, 5),
+    signals: {
+      emails: Array.from(emails).slice(0, 4),
+      phones: Array.from(phones).slice(0, 4),
+      locations: Array.from(locations).slice(0, 4),
+      contactPages: Array.from(contactPages).slice(0, 3),
+      pricingPages: Array.from(pricingPages).slice(0, 3),
+    },
+  };
+}
 function inferCompanyFields(insights: ReturnType<typeof extractInsights>, results: BraveWebResult[]) {
   const sectors: string[] = [];
   const services: string[] = [];
@@ -342,6 +392,15 @@ export async function POST(request: NextRequest) {
     const classification = classifyEntity(query, flat, insights.socials);
     const company = classification.type === "company" ? inferCompanyFields(insights, flat) : undefined;
     const person = classification.type === "person" ? inferPersonFields(flat) : undefined;
+    const trace = Object.entries(allResults).map(([searchQuery, queryResults]) => {
+      const summary = summarizeQuerySignals(queryResults);
+      return {
+        query: searchQuery,
+        domains: summary.domains,
+        topResults: queryResults.slice(0, 3),
+        signals: summary.signals,
+      };
+    });
 
     const resultPayload = {
       query,
@@ -351,6 +410,7 @@ export async function POST(request: NextRequest) {
       company,
       person,
       samples: flat.slice(0, 25),
+      trace,
       meta: {
         braveEnabled: Boolean(process.env.BRAVE_API_KEY),
         openaiEnabled: Boolean(process.env.OPENAI_API_KEY),

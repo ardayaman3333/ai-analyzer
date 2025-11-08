@@ -14,6 +14,25 @@ type Analysis = {
   updatedAt?: string | null;
 };
 
+type TraceResult = {
+  title?: string;
+  url?: string;
+  description?: string;
+};
+
+type TraceEntry = {
+  query: string;
+  domains?: string[];
+  topResults?: TraceResult[];
+  signals?: {
+    emails?: string[];
+    phones?: string[];
+    locations?: string[];
+    contactPages?: string[];
+    pricingPages?: string[];
+  };
+};
+
 export default function AnalysisDetailPage() {
   const params = useParams<{ id: string }>();
   const id = params.id;
@@ -103,6 +122,7 @@ export default function AnalysisDetailPage() {
   const classificationType = result?.classification?.type ?? "unknown";
   const company = result?.company;
   const person = result?.person;
+  const trace = Array.isArray(result?.trace) ? (result.trace as TraceEntry[]) : [];
 
   const statusBadge =
     status === "completed"
@@ -484,6 +504,116 @@ export default function AnalysisDetailPage() {
             </div>
           )}
         </section>
+
+        {trace.length ? (
+          <section className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur">
+            <p className="text-xs uppercase tracking-[0.3em] text-slate-300">Deep search trace</p>
+            <h2 className="mt-2 text-2xl font-semibold text-white">Reasoning chain</h2>
+            <p className="mt-2 text-sm text-slate-400">
+              Each expanded query below shows why we captured specific signals (domains, contacts, pricing hints). Use this to audit the crawl.
+            </p>
+            <div className="mt-6 space-y-4">
+              {trace.map((entry) => (
+                <div key={entry.query} className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                  <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Query</p>
+                      <h3 className="text-lg font-semibold text-white">{entry.query}</h3>
+                    </div>
+                    {entry.domains?.length ? (
+                      <p className="text-sm text-slate-300">
+                        Top domains:{" "}
+                        <span className="text-white">
+                          {entry.domains.slice(0, 4).join(", ")}
+                          {entry.domains.length > 4 ? "…" : ""}
+                        </span>
+                      </p>
+                    ) : null}
+                  </div>
+                  {entry.signals && (
+                    <div className="mt-4 grid gap-4 text-sm text-slate-300 md:grid-cols-2">
+                      <div>
+                        <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Contacts</p>
+                        {entry.signals.contactPages?.length ? (
+                          <ul className="mt-2 space-y-1 text-sky-200">
+                            {entry.signals.contactPages.map((url) => (
+                              <li key={url} className="break-all">
+                                <a href={url} target="_blank" rel="noreferrer" className="underline underline-offset-2">
+                                  {url}
+                                </a>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="mt-2">No contact endpoints detected.</p>
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Pricing</p>
+                        {entry.signals.pricingPages?.length ? (
+                          <ul className="mt-2 space-y-1 text-sky-200">
+                            {entry.signals.pricingPages.map((url) => (
+                              <li key={url} className="break-all">
+                                <a href={url} target="_blank" rel="noreferrer" className="underline underline-offset-2">
+                                  {url}
+                                </a>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="mt-2">No pricing references found.</p>
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Emails</p>
+                        {entry.signals.emails?.length ? (
+                          <ul className="mt-2 space-y-1">
+                            {entry.signals.emails.map((email) => (
+                              <li key={email}>{email}</li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="mt-2">No emails surfaced.</p>
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Phones & locations</p>
+                        {entry.signals.phones?.length || entry.signals.locations?.length ? (
+                          <div className="mt-2 space-y-1">
+                            {entry.signals.phones?.length ? (
+                              <p>Phones: {entry.signals.phones.join(", ")}</p>
+                            ) : null}
+                            {entry.signals.locations?.length ? (
+                              <p>Locations: {entry.signals.locations.join(", ")}</p>
+                            ) : null}
+                          </div>
+                        ) : (
+                          <p className="mt-2">No phone/location hints yet.</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  {entry.topResults?.length ? (
+                    <div className="mt-4 space-y-2 text-sm text-slate-300">
+                      <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Top hits</p>
+                      {entry.topResults.map((res, idx) => (
+                        <div key={`${entry.query}-${idx}`} className="rounded-xl border border-white/10 bg-white/5 p-3">
+                          <p className="font-semibold text-white">{res.title || "Untitled result"}</p>
+                          {res.url && (
+                            <a href={res.url} target="_blank" rel="noreferrer" className="text-sky-200 text-xs underline underline-offset-2">
+                              {res.url}
+                            </a>
+                          )}
+                          {res.description && <p className="mt-1 text-xs text-slate-400">{res.description}</p>}
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          </section>
+        ) : null}
 
         <section className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur">
           <p className="text-xs uppercase tracking-[0.3em] text-slate-300">Query expansion</p>
