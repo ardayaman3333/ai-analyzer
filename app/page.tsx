@@ -239,7 +239,7 @@ export default function Home() {
           {highlightCards.map((card) => (
             <div
               key={card.title}
-              className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur transition hover:border-white/30"
+              className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur transition-transform duration-300 hover:scale-[1.03] hover:border-white/30"
             >
               <p className="text-xs font-semibold uppercase tracking-[0.3em] text-sky-200">
                 {card.tag}
