@@ -76,28 +76,54 @@ async function expandQueriesWithOpenAI(query: string): Promise<string[]> {
 async function braveSearch(q: string): Promise<BraveWebResult[]> {
   const token = process.env.BRAVE_API_KEY;
   if (!token) return [];
-  const url = new URL("https://api.search.brave.com/res/v1/web/search");
-  url.searchParams.set("q", q);
-  url.searchParams.set("source", "web");
+  const sources: Array<{ path: string; key: "web" | "news" | "discussions"; limit: number }> = [
+    { path: "web", key: "web", limit: 12 },
+    { path: "news", key: "news", limit: 6 },
+    { path: "discussions", key: "discussions", limit: 6 },
+  ];
 
-  const res = await fetch(url.toString(), {
-    headers: {
-      "X-Subscription-Token": token,
-      Accept: "application/json",
-    },
-    cache: "no-store",
-  });
-  if (!res.ok) {
-    console.warn("Brave HTTP", res.status, q);
-    return [];
+  const aggregated: BraveWebResult[] = [];
+  const seen = new Set<string>();
+
+  for (const source of sources) {
+    try {
+      const url = new URL(`https://api.search.brave.com/res/v1/${source.path}/search`);
+      url.searchParams.set("q", q);
+      const res = await fetch(url.toString(), {
+        headers: {
+          "X-Subscription-Token": token,
+          Accept: "application/json",
+        },
+        cache: "no-store",
+      });
+      if (!res.ok) {
+        console.warn("Brave HTTP", res.status, q, source.path);
+        continue;
+      }
+      const json = await res.json();
+      const bucket =
+        source.key === "web"
+          ? json?.web?.results
+          : source.key === "news"
+          ? json?.news?.results
+          : json?.discussions?.results;
+      if (!Array.isArray(bucket)) continue;
+      for (const item of bucket.slice(0, source.limit)) {
+        const urlValue = item?.url || item?.link || item?.storyUrl;
+        if (!urlValue || seen.has(urlValue)) continue;
+        aggregated.push({
+          title: item?.title || item?.headline,
+          url: urlValue,
+          description: item?.description || item?.meta_description || item?.snippet,
+        });
+        seen.add(urlValue);
+      }
+    } catch (err) {
+      console.warn("Brave source failed", source.path, err);
+    }
   }
-  const json = await res.json();
-  const web: any[] = json?.web?.results ?? [];
-  return web.slice(0, 10).map((r: any) => ({
-    title: r.title,
-    url: r.url,
-    description: r.description,
-  }));
+
+  return aggregated.slice(0, 25);
 }
 
 function extractInsights(results: BraveWebResult[]) {
@@ -215,34 +241,49 @@ async function fetchWithTimeout(url: string, timeoutMs = 5000) {
   }
 }
 
-async function enrichInsightsWithDomain(insights: ReturnType<typeof extractInsights>) {
-  if (!insights.primaryDomain) return insights;
+async function enrichInsightsWithDomain(
+  insights: ReturnType<typeof extractInsights>,
+  extraDomains: string[] = []
+) {
+  if (!insights.primaryDomain && !extraDomains.length) return insights;
 
-  const baseDomain = insights.primaryDomain.replace(/^https?:\/\//, "");
   const emails = new Set(insights.emails);
   const phones = new Set(insights.phones);
   const locations = new Set(insights.locations);
   const contactPages = new Set(insights.contactPages);
   const pricingPages = new Set(insights.pricingPages);
 
-  const snapshot = await fetchWithTimeout(`https://r.jina.ai/https://${baseDomain}`);
-  if (snapshot) {
-    const lower = snapshot.toLowerCase();
-    const emailMatches = snapshot.match(EMAIL_REGEX);
-    emailMatches?.forEach((m) => emails.add(m.toLowerCase()));
-    const phoneMatches = snapshot.match(PHONE_REGEX);
-    phoneMatches?.forEach((m) => phones.add(m.trim()));
-    for (const hint of LOCATION_HINTS) {
-      if (lower.includes(hint)) {
-        locations.add(hint.replace(/\b\w/g, (c) => c.toUpperCase()));
+  const domainsToVisit = [
+    insights.primaryDomain?.replace(/^https?:\/\//, ""),
+    ...extraDomains.map((d) => d.replace(/^https?:\/\//, "")),
+  ]
+    .filter(Boolean)
+    .slice(0, 4);
+
+  const slugCandidates = ["", "about", "team", "contact", "contact-us", "support", "pricing", "plans", "services", "solutions"];
+
+  for (const domain of domainsToVisit) {
+    const visited = new Set<string>();
+    for (const slug of slugCandidates) {
+      const url = slug ? `https://${domain}/${slug}` : `https://${domain}`;
+      if (visited.has(url)) continue;
+      visited.add(url);
+      const snapshot = await fetchWithTimeout(url);
+      if (!snapshot) continue;
+      const lower = snapshot.toLowerCase();
+      const emailMatches = snapshot.match(EMAIL_REGEX);
+      emailMatches?.forEach((m) => emails.add(m.toLowerCase()));
+      const phoneMatches = snapshot.match(PHONE_REGEX);
+      phoneMatches?.forEach((m) => phones.add(m.trim()));
+      for (const hint of LOCATION_HINTS) {
+        if (lower.includes(hint)) {
+          locations.add(hint.replace(/\b\w/g, (c) => c.toUpperCase()));
+        }
       }
+      if (slug.includes("contact")) contactPages.add(url);
+      if (slug.includes("pricing") || slug.includes("plans")) pricingPages.add(url);
     }
   }
-
-  const contactGuesses = ["contact", "contact-us", "support"];
-  const pricingGuesses = ["pricing", "plans", "solutions/pricing"];
-  contactGuesses.forEach((slug) => contactPages.add(`https://${baseDomain}/${slug}`));
-  pricingGuesses.forEach((slug) => pricingPages.add(`https://${baseDomain}/${slug}`));
 
   return {
     ...insights,
@@ -388,7 +429,8 @@ export async function POST(request: NextRequest) {
 
     const flat = Object.values(allResults).flat();
     const rawInsights = extractInsights(flat);
-    const insights = await enrichInsightsWithDomain(rawInsights);
+    const extraDomains = (rawInsights.domainHighlights || []).map((d) => d.domain).filter(Boolean);
+    const insights = await enrichInsightsWithDomain(rawInsights, extraDomains);
     const classification = classifyEntity(query, flat, insights.socials);
     const company = classification.type === "company" ? inferCompanyFields(insights, flat) : undefined;
     const person = classification.type === "person" ? inferPersonFields(flat) : undefined;
