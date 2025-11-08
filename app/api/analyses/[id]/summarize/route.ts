@@ -135,12 +135,74 @@ function fallbackReport(resultPayload: any): Report {
   };
 }
 
+function extractReasoningText(data: any) {
+  if (!data) return "";
+  if (Array.isArray(data.output)) {
+    return data.output
+      .flatMap((item: any) =>
+        Array.isArray(item.content)
+          ? item.content
+              .filter((c: any) => c.type === "output_text" || c.type === "text")
+              .map((c: any) => c.text || "")
+          : []
+      )
+      .join("\n")
+      .trim();
+  }
+  if (Array.isArray(data.content)) {
+    return data.content
+      .filter((c: any) => c.type === "output_text" || c.type === "text")
+      .map((c: any) => c.text || "")
+      .join("\n")
+      .trim();
+  }
+  return "";
+}
+
 async function generateReport(resultPayload: any): Promise<Report> {
   const apiKey = process.env.OPENAI_API_KEY;
+  const reasoningModel = process.env.OPENAI_REASONING_MODEL;
   if (!apiKey) {
     return fallbackReport(resultPayload);
   }
   try {
+    if (reasoningModel) {
+      const prompt = buildPrompt(resultPayload);
+      try {
+        const res = await fetch("https://api.openai.com/v1/responses", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            model: reasoningModel,
+            reasoning: { effort: "medium" },
+            max_output_tokens: 1800,
+            input: [
+              {
+                role: "user",
+                content: [
+                  {
+                    type: "input_text",
+                    text: `You are an experienced brand analyst that must output valid JSON only. ${prompt}`,
+                  },
+                ],
+              },
+            ],
+          }),
+        });
+        if (!res.ok) throw new Error(`OpenAI Reasoning HTTP ${res.status}`);
+        const data = await res.json();
+        const extracted = extractReasoningText(data);
+        if (extracted) {
+          return JSON.parse(extracted) as Report;
+        }
+      } catch (reasoningErr) {
+        console.warn("Reasoning API failed, falling back to chat completions", reasoningErr);
+      }
+    }
+
     const prompt = buildPrompt(resultPayload);
     const res = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
