@@ -106,7 +106,7 @@ export default function Home() {
               <div className="mt-4 flex flex-col gap-3 md:flex-row">
                 <Input
                   type="text"
-                  placeholder="e.g. “VisionFast AI Solutions”"
+                  placeholder="e.g. “Emergent AI Lab Istanbul pricing”"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   disabled={isLoading}
