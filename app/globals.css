@@ -97,7 +97,27 @@
   * {
     @apply border-border; /* Artık 'border-border'ı tanıyacak */
   }
-  body {
-    @apply bg-background text-foreground;
+body {
+  @apply bg-background text-foreground;
+}
+
+.star-field {
+  background-image:
+    radial-gradient(rgba(255, 255, 255, 0.25) 1px, transparent 1px),
+    radial-gradient(rgba(126, 200, 255, 0.2) 1px, transparent 1px),
+    radial-gradient(rgba(255, 255, 255, 0.15) 2px, transparent 2px);
+  background-size: 200px 200px, 300px 300px, 400px 400px;
+  background-position: 0 0, 50px 50px, 100px 100px;
+  animation: star-drift 40s linear infinite;
+  opacity: 0.4;
+}
+
+@keyframes star-drift {
+  from {
+    transform: translate3d(0, 0, 0);
   }
+  to {
+    transform: translate3d(-300px, -200px, 0);
+  }
+}
 }
