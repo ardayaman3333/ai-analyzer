@@ -32,25 +32,39 @@ const highlightCards: HighlightCard[] = [
 
 const cometConfigs = [
   {
-    startY: "8vh",
-    endY: "-12vh",
+    startY: "12vh",
+    endY: "-15vh",
     delay: "0s",
-    duration: "5.2s",
-    rotate: "6deg",
-  },
-  {
-    startY: "48vh",
-    endY: "18vh",
-    delay: "2s",
     duration: "6s",
-    rotate: "2deg",
+    rotate: "7deg",
   },
   {
-    startY: "80vh",
-    endY: "62vh",
-    delay: "3.8s",
-    duration: "5.5s",
-    rotate: "-3deg",
+    startY: "32vh",
+    endY: "6vh",
+    delay: "2s",
+    duration: "6.2s",
+    rotate: "3deg",
+  },
+  {
+    startY: "55vh",
+    endY: "28vh",
+    delay: "4s",
+    duration: "6.4s",
+    rotate: "1deg",
+  },
+  {
+    startY: "72vh",
+    endY: "58vh",
+    delay: "6s",
+    duration: "6.1s",
+    rotate: "-2deg",
+  },
+  {
+    startY: "88vh",
+    endY: "70vh",
+    delay: "8s",
+    duration: "6.3s",
+    rotate: "-4deg",
   },
 ] as const;
 
