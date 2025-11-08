@@ -1,7 +1,7 @@
 /* app/page.tsx */
 "use client";
 
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -82,17 +82,26 @@ export default function Home() {
     <main className="relative min-h-screen overflow-hidden bg-slate-950 text-white">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(56,189,248,0.15),_transparent_55%),radial-gradient(circle_at_20%_20%,_rgba(129,140,248,0.2),_transparent_45%),radial-gradient(circle_at_80%_0%,_rgba(248,113,113,0.15),_transparent_50%)]" />
       <div className="star-field pointer-events-none" aria-hidden="true">
-        {Array.from({ length: 18 }).map((_, idx) => (
-          <div
-            key={idx}
-            className="shooting-star"
-            style={{
-              top: `${Math.random() * 100}%`,
-              left: `${Math.random() * 100}%`,
-              animationDelay: `${Math.random() * 12}s`,
-            }}
-          />
-        ))}
+        {Array.from({ length: 18 }).map((_, idx) => {
+          const top = `${Math.random() * 100}%`;
+          const left = `${Math.random() * 100}%`;
+          const streakDelay = `${Math.random() * 12}s`;
+          const sparkleDelay = `${Math.random() * 4}s`;
+          return (
+            <div
+              key={idx}
+              className="shooting-star"
+              style={
+                {
+                  top,
+                  left,
+                  animationDelay: streakDelay,
+                  "--twinkle-delay": sparkleDelay,
+                } as CSSProperties
+              }
+            />
+          );
+        })}
       </div>
 
       <div className="relative z-10 mx-auto flex max-w-6xl flex-col gap-16 px-6 py-16 lg:py-24">

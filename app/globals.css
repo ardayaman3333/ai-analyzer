@@ -117,6 +117,22 @@ body {
   opacity: 0.7;
 }
 
+.shooting-star::before {
+  content: "";
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  top: -4px;
+  left: -4px;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0));
+  opacity: 0;
+  transform-origin: center;
+  animation: twinkle 2.4s ease-in-out infinite;
+  animation-delay: var(--twinkle-delay, 0s);
+  filter: drop-shadow(0 0 10px rgba(125, 177, 255, 0.6));
+}
+
 .shooting-star:nth-child(2) {
   animation-delay: 2s;
   top: 30%;
@@ -192,6 +208,22 @@ body {
   100% {
     transform: translate3d(400px, -400px, 0) rotate(45deg) scaleX(0);
     opacity: 0;
+  }
+}
+
+@keyframes twinkle {
+  0%,
+  100% {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  40% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+  60% {
+    opacity: 0.6;
+    transform: scale(0.9);
   }
 }
 }
