@@ -186,6 +186,33 @@ export default function Home() {
             </div>
           ))}
         </section>
+
+        <section className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur">
+          <p className="text-xs uppercase tracking-[0.3em] text-slate-300">Help / SSS</p>
+          <h2 className="mt-2 text-2xl font-semibold text-white">Sonuçlar beklediğin gibi değilse?</h2>
+          <div className="mt-6 grid gap-4 md:grid-cols-2 text-sm text-slate-200">
+            <div className="space-y-3">
+              <h3 className="text-base font-semibold text-white">Sorgunu zenginleştir</h3>
+              <p>Marka adı + şehir/ülke + ürün/hizmet anahtar kelimesi kullan. Örn: “VisionFast AI Solutions İstanbul pricing”.</p>
+              <p>Farklı varyasyonlar Brave sonuçlarını çeşitlendirir ve daha fazla sinyal yakalar.</p>
+            </div>
+            <div className="space-y-3">
+              <h3 className="text-base font-semibold text-white">Analizi yenile</h3>
+              <p>Detay sayfasındaki “Regenerate summary” butonu yeni sinyalleri toplar.</p>
+              <p>İstersen aynı sorguyu silip tekrar gönderebilirsin; queue tamamen yeniden çalışır.</p>
+            </div>
+            <div className="space-y-3">
+              <h3 className="text-base font-semibold text-white">Trace’i kontrol et</h3>
+              <p>“Deep search trace” alanı hangi sorgudan hangi domain/sinyaller geldiğini gösterir.</p>
+              <p>Eksik kaynak görürsen yeni anahtar kelime veya manuel domain ekle.</p>
+            </div>
+            <div className="space-y-3">
+              <h3 className="text-base font-semibold text-white">Destek</h3>
+              <p>Analiz <em>failed</em> olursa API anahtarlarını doğrula ve tekrar dene.</p>
+              <p>Hâlâ sorun varsa trace log’unu göndererek bize ulaş.</p>
+            </div>
+          </div>
+        </section>
       </div>
     </main>
   );
