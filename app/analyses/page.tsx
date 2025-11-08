@@ -1,8 +1,9 @@
-import { headers } from "next/headers";
+import { headers, cookies } from "next/headers";
 import { AnalysesBoard } from "@/components/analyses/AnalysesBoard";
 
 async function fetchAnalyses() {
   const hdrs = await headers();
+  const cookieStore = await cookies();
   const getHeader = (name: string) => {
     const lower = name.toLowerCase();
     if (typeof (hdrs as Headers).get === "function") {
@@ -16,7 +17,11 @@ async function fetchAnalyses() {
   const host = getHeader("x-forwarded-host") || getHeader("host") || "localhost:3000";
   const proto = getHeader("x-forwarded-proto") || (process.env.VERCEL ? "https" : "http");
   const base = `${proto}://${host}`;
-  const res = await fetch(`${base}/api/analyses?limit=50`, { cache: "no-store" });
+  const sessionId = cookieStore.get("nexus_session")?.value;
+  const res = await fetch(`${base}/api/analyses?limit=50`, {
+    cache: "no-store",
+    headers: sessionId ? { Cookie: `nexus_session=${sessionId}` } : undefined,
+  });
   if (!res.ok) return [] as any[];
   return res.json();
 }
