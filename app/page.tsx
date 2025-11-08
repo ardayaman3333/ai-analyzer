@@ -101,8 +101,8 @@ export default function Home() {
             <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-slate-200">
               Realtime brand intelligence
             </span>
-            <h1 className="mt-6 text-5xl font-semibold leading-tight tracking-tight text-white sm:text-6xl">
-              <span className="block bg-gradient-to-r from-sky-300 via-indigo-300 to-pink-300 bg-clip-text text-transparent">
+            <h1 className="mt-6 text-6xl font-semibold leading-tight tracking-tight text-white sm:text-7xl">
+              <span className="block bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.9),_rgba(146,179,255,0.3))] bg-clip-text text-transparent drop-shadow-[0_0_25px_rgba(91,124,255,0.45)]">
                 NexusAI
               </span>
               <span className="mt-2 block text-slate-200">
