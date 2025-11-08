@@ -103,7 +103,13 @@ export default function Home() {
 
             <div className="mt-8 rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
               <p className="text-sm uppercase tracking-widest text-slate-300">Start a fresh analysis</p>
-              <div className="mt-4 flex flex-col gap-3 md:flex-row">
+              <form
+                className="mt-4 flex flex-col gap-3 md:flex-row"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleSubmit();
+                }}
+              >
                 <Input
                   type="text"
                   placeholder="e.g. “Emergent AI Lab Istanbul pricing”"
@@ -120,7 +126,7 @@ export default function Home() {
                 >
                   {isLoading ? "Processing..." : "Run analysis"}
                 </Button>
-              </div>
+              </form>
 
               {message && (
                 <div
